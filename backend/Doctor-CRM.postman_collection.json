@@ -1,0 +1,1561 @@
+{
+  "info": {
+    "_postman_id": "cd810df4-3f05-480d-9bec-eeb15e6e1e1e",
+    "name": "Doctor CRM API (fixed URLs)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "protocol",
+      "value": "http"
+    },
+    {
+      "key": "host",
+      "value": "127.0.0.1"
+    },
+    {
+      "key": "port",
+      "value": "8000"
+    },
+    {
+      "key": "base_path",
+      "value": "api"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    },
+    {
+      "key": "doctor_id",
+      "value": ""
+    },
+    {
+      "key": "patient_id",
+      "value": ""
+    },
+    {
+      "key": "service_id",
+      "value": ""
+    },
+    {
+      "key": "room_id",
+      "value": ""
+    },
+    {
+      "key": "appointment_id",
+      "value": ""
+    },
+    {
+      "key": "visit_note_id",
+      "value": ""
+    },
+    {
+      "key": "attachment_id",
+      "value": ""
+    },
+    {
+      "key": "start_at",
+      "value": "2025-12-15T10:00:00Z"
+    },
+    {
+      "key": "end_at",
+      "value": "2025-12-15T10:30:00Z"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/auth/login/",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "{{base_path}}",
+                "auth",
+                "login",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@clinic.local\",\n  \"password\": \"Admin123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('access_token', json.access || '');",
+                  "pm.collectionVariables.set('refresh_token', json.refresh || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (Doctor1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/auth/login/",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "{{base_path}}",
+                "auth",
+                "login",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"doctor1@clinic.local\",\n  \"password\": \"Doctor123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('access_token', json.access || '');",
+                  "pm.collectionVariables.set('refresh_token', json.refresh || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/auth/refresh/",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "{{base_path}}",
+                "auth",
+                "refresh",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('access_token', json.access || '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout (Blacklist refresh)",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/auth/logout/",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "{{base_path}}",
+                "auth",
+                "logout",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Me",
+      "item": [
+        {
+          "name": "Get my profile",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/me/",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "{{base_path}}",
+                "me",
+                ""
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Doctors",
+          "item": [
+            {
+              "name": "List doctors",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/doctors/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "doctors",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create doctor",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/doctors/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "doctors",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newdoctor@clinic.local\",\n  \"password\": \"Doctor123!\",\n  \"first_name\": \"New\",\n  \"last_name\": \"Doctor\",\n  \"is_active\": true,\n  \"doctor_profile\": {\n    \"full_name\": \"New Doctor\",\n    \"specialization\": \"Therapist\",\n    \"phone\": \"+77000000000\",\n    \"room\": \"101\"\n  }\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "try {",
+                      "  pm.collectionVariables.set('doctor_id', pm.response.json().id);",
+                      "} catch (e) {}"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Patients",
+          "item": [
+            {
+              "name": "List patients",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/patients/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "patients",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create patient",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/patients/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "patients",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"middle_name\": \"\",\n  \"birth_date\": null,\n  \"gender\": \"U\",\n  \"phone\": \"+77000000001\",\n  \"email\": \"john.doe@mail.local\",\n  \"address\": \"\",\n  \"comment\": \"\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "try {",
+                      "  pm.collectionVariables.set('patient_id', pm.response.json().id);",
+                      "} catch (e) {}"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Services",
+          "item": [
+            {
+              "name": "List services",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/services/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "services",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create service",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/services/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "services",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"code\": \"CONSULT\",\n  \"name_en\": \"Consultation\",\n  \"name_ru\": \"Консультация\",\n  \"name_kk\": \"Кеңес беру\",\n  \"description_en\": \"\",\n  \"description_ru\": \"\",\n  \"description_kk\": \"\",\n  \"duration_minutes\": 30,\n  \"price\": \"10000.00\",\n  \"is_active\": true\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "try {",
+                      "  pm.collectionVariables.set('service_id', pm.response.json().id);",
+                      "} catch (e) {}"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Rooms",
+          "item": [
+            {
+              "name": "List rooms",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/rooms/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "rooms",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create room",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/rooms/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "rooms",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"101\",\n  \"floor\": 1,\n  \"comment\": \"\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "try {",
+                      "  pm.collectionVariables.set('room_id', pm.response.json().id);",
+                      "} catch (e) {}"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Appointments",
+          "item": [
+            {
+              "name": "List appointments",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/appointments/?ordering=-start_at",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "appointments",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "ordering",
+                      "value": "-start_at"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create appointment",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/appointments/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "appointments",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"patient\": {{patient_id}},\n  \"doctor\": {{doctor_id}},\n  \"service\": {{service_id}},\n  \"room\": {{room_id}},\n  \"start_at\": \"{{start_at}}\",\n  \"end_at\": \"{{end_at}}\",\n  \"status\": \"SCHEDULED\",\n  \"reason\": \"Demo appointment\",\n  \"comment\": \"\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "try {",
+                      "  pm.collectionVariables.set('appointment_id', pm.response.json().id);",
+                      "} catch (e) {}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Report (appointments)",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/reports/appointments/?status=SCHEDULED",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "reports",
+                    "appointments",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "SCHEDULED"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Audit Logs",
+          "item": [
+            {
+              "name": "List audit logs",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/admin/audit-logs/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "admin",
+                    "audit-logs",
+                    ""
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Doctor",
+      "item": [
+        {
+          "name": "Appointments",
+          "item": [
+            {
+              "name": "List my appointments",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/appointments/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "appointments",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Get appointment by id",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/appointments/{{appointment_id}}/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "appointments",
+                    "{{appointment_id}}",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Set appointment status",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/appointments/{{appointment_id}}/set_status/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "appointments",
+                    "{{appointment_id}}",
+                    "set_status",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"CONFIRMED\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Visit Notes",
+          "item": [
+            {
+              "name": "List my visit notes",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/visit-notes/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "visit-notes",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create visit note",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/visit-notes/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "visit-notes",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"appointment\": {{appointment_id}},\n  \"note_text\": \"Patient is stable. Follow-up in 2 weeks.\"\n}"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "try {",
+                      "  pm.collectionVariables.set('visit_note_id', pm.response.json().id);",
+                      "} catch (e) {}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Get visit note",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/visit-notes/{{visit_note_id}}/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "visit-notes",
+                    "{{visit_note_id}}",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Update visit note",
+              "request": {
+                "method": "PATCH",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/visit-notes/{{visit_note_id}}/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "visit-notes",
+                    "{{visit_note_id}}",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"note_text\": \"Updated note text\"\n}"
+                }
+              }
+            },
+            {
+              "name": "Delete visit note",
+              "request": {
+                "method": "DELETE",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/visit-notes/{{visit_note_id}}/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "visit-notes",
+                    "{{visit_note_id}}",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "List attachments for visit note",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/visit-notes/{{visit_note_id}}/attachments/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "visit-notes",
+                    "{{visit_note_id}}",
+                    "attachments",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Upload attachment (form-data)",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/visit-notes/{{visit_note_id}}/attachments/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "visit-notes",
+                    "{{visit_note_id}}",
+                    "attachments",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "src": ""
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "try {",
+                      "  pm.collectionVariables.set('attachment_id', pm.response.json().id);",
+                      "} catch (e) {}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete attachment",
+              "request": {
+                "method": "DELETE",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/visit-notes/{{visit_note_id}}/attachments/{{attachment_id}}/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "visit-notes",
+                    "{{visit_note_id}}",
+                    "attachments",
+                    "{{attachment_id}}",
+                    ""
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Schedule",
+          "item": [
+            {
+              "name": "List schedule",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/schedule/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "schedule",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create schedule item",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/schedule/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "schedule",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"weekday\": 0,\n  \"start_time\": \"09:00:00\",\n  \"end_time\": \"13:00:00\",\n  \"slot_minutes\": 30\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Time Off",
+          "item": [
+            {
+              "name": "List time off",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/time-off/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "time-off",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Create time off",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/time-off/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "time-off",
+                    ""
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"start_at\": \"2025-12-16T09:00:00Z\",\n  \"end_at\": \"2025-12-16T12:00:00Z\",\n  \"reason\": \"Personal\"\n}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Patients",
+          "item": [
+            {
+              "name": "List my patients",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/patients/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "patients",
+                    ""
+                  ]
+                }
+              }
+            },
+            {
+              "name": "Patient history",
+              "request": {
+                "method": "GET",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{access_token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/doctor/patients/{{patient_id}}/history/",
+                  "protocol": "{{protocol}}",
+                  "host": [
+                    "{{host}}"
+                  ],
+                  "port": "{{port}}",
+                  "path": [
+                    "{{base_path}}",
+                    "doctor",
+                    "patients",
+                    "{{patient_id}}",
+                    "history",
+                    ""
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search (q=doe)",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/search/?q=doe&limit=10",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "{{base_path}}",
+                "search",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "doe"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "AI Note Draft",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/ai/note-draft/",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "{{base_path}}",
+                "ai",
+                "note-draft",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bullets\": [\"Headache\", \"Fatigue\"],\n  \"free_text\": \"Symptoms started 3 days ago.\",\n  \"language\": \"en\"\n}"
+            }
+          }
+        },
+        {
+          "name": "AI Patient Summary",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{protocol}}://{{host}}:{{port}}/{{base_path}}/ai/patient-summary/",
+              "protocol": "{{protocol}}",
+              "host": [
+                "{{host}}"
+              ],
+              "port": "{{port}}",
+              "path": [
+                "{{base_path}}",
+                "ai",
+                "patient-summary",
+                ""
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patient_id\": {{patient_id}},\n  \"limit\": 5,\n  \"language\": \"en\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

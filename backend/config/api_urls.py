@@ -1,0 +1,35 @@
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from accounts.views import MeView, AdminDoctorViewSet
+from clinic.views_admin import AdminPatientViewSet, AdminServiceViewSet, AdminRoomViewSet, AdminAppointmentViewSet
+from clinic.views_doctor import DoctorAppointmentViewSet, DoctorVisitNoteViewSet, DoctorScheduleViewSet, DoctorTimeOffViewSet
+
+
+admin_router = DefaultRouter()
+admin_router.register("doctors", AdminDoctorViewSet, basename="admin-doctors")
+admin_router.register("patients", AdminPatientViewSet, basename="admin-patients")
+admin_router.register("services", AdminServiceViewSet, basename="admin-services")
+admin_router.register("rooms", AdminRoomViewSet, basename="admin-rooms")
+admin_router.register("appointments", AdminAppointmentViewSet, basename="admin-appointments")
+
+doctor_router = DefaultRouter()
+doctor_router.register("appointments", DoctorAppointmentViewSet, basename="doctor-appointments")
+doctor_router.register("visit-notes", DoctorVisitNoteViewSet, basename="doctor-visit-notes")
+doctor_router.register("schedule", DoctorScheduleViewSet, basename="doctor-schedule")
+doctor_router.register("time-off", DoctorTimeOffViewSet, basename="doctor-timeoff")
+
+
+urlpatterns = [
+    # auth
+    path("auth/login/", TokenObtainPairView.as_view(), name="login"),
+    path("auth/refresh/", TokenRefreshView.as_view(), name="refresh"),
+
+    # profile
+    path("me/", MeView.as_view(), name="me"),
+
+    # role-separated routers
+    path("admin/", include(admin_router.urls)),
+    path("doctor/", include(doctor_router.urls)),
+]
