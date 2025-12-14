@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "accounts",
     "clinic",
+    "audit",
 ]
 
 MIDDLEWARE = [

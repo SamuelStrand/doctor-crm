@@ -2,6 +2,8 @@ from rest_framework import viewsets
 from core.permissions import IsAdminRole
 from .models import Patient, Service, Room, Appointment
 from .serializers import PatientSerializer, ServiceSerializer, RoomSerializer, AppointmentAdminSerializer
+from audit.utils import log_action
+from audit.models import AuditAction
 
 
 class AdminPatientViewSet(viewsets.ModelViewSet):
@@ -10,6 +12,17 @@ class AdminPatientViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminRole]
     search_fields = ("first_name", "last_name", "middle_name", "phone", "email")
 
+    def perform_create(self, serializer):
+        obj = serializer.save()
+        log_action(request=self.request, action=AuditAction.CREATE, obj=obj)
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(request=self.request, action=AuditAction.UPDATE, obj=obj)
+
+    def perform_destroy(self, instance):
+        log_action(request=self.request, action=AuditAction.DELETE, obj=instance)
+        instance.delete()
 
 class AdminServiceViewSet(viewsets.ModelViewSet):
     queryset = Service.objects.all().order_by("code")
@@ -17,6 +30,17 @@ class AdminServiceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminRole]
     search_fields = ("code", "name_en", "name_ru", "name_kk")
 
+    def perform_create(self, serializer):
+        obj = serializer.save()
+        log_action(request=self.request, action=AuditAction.CREATE, obj=obj)
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(request=self.request, action=AuditAction.UPDATE, obj=obj)
+
+    def perform_destroy(self, instance):
+        log_action(request=self.request, action=AuditAction.DELETE, obj=instance)
+        instance.delete()
 
 class AdminRoomViewSet(viewsets.ModelViewSet):
     queryset = Room.objects.all().order_by("name")
@@ -24,6 +48,17 @@ class AdminRoomViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminRole]
     search_fields = ("name",)
 
+    def perform_create(self, serializer):
+        obj = serializer.save()
+        log_action(request=self.request, action=AuditAction.CREATE, obj=obj)
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(request=self.request, action=AuditAction.UPDATE, obj=obj)
+
+    def perform_destroy(self, instance):
+        log_action(request=self.request, action=AuditAction.DELETE, obj=instance)
+        instance.delete()
 
 class AdminAppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.select_related("patient", "doctor", "service", "room").all().order_by("-start_at")
@@ -32,4 +67,13 @@ class AdminAppointmentViewSet(viewsets.ModelViewSet):
     search_fields = ("patient__first_name", "patient__last_name", "doctor__email", "service__code")
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        obj = serializer.save()
+        log_action(request=self.request, action=AuditAction.CREATE, obj=obj)
+
+    def perform_update(self, serializer):
+        obj = serializer.save()
+        log_action(request=self.request, action=AuditAction.UPDATE, obj=obj)
+
+    def perform_destroy(self, instance):
+        log_action(request=self.request, action=AuditAction.DELETE, obj=instance)
+        instance.delete()

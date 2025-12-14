@@ -13,6 +13,10 @@ from .serializers import (
     DoctorTimeOffSerializer,
 )
 
+from audit.utils import log_action
+from audit.models import AuditAction
+
+
 
 class DoctorAppointmentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     serializer_class = AppointmentDoctorSerializer
@@ -45,8 +49,13 @@ class DoctorVisitNoteViewSet(viewsets.ModelViewSet):
         return VisitNote.objects.select_related("appointment", "patient").filter(doctor=self.request.user).order_by("-created_at")
 
     def perform_create(self, serializer):
-        # doctor = текущий пользователь (фиксируем)
         serializer.save(doctor=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        obj = self.get_object()
+        log_action(request=request, action=AuditAction.READ, obj=obj, meta={"type": "visit_note"})
+        return super().retrieve(request, *args, **kwargs)
+
 
 
 class DoctorScheduleViewSet(viewsets.ModelViewSet):

@@ -5,6 +5,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from accounts.views import MeView, AdminDoctorViewSet
 from clinic.views_admin import AdminPatientViewSet, AdminServiceViewSet, AdminRoomViewSet, AdminAppointmentViewSet
 from clinic.views_doctor import DoctorAppointmentViewSet, DoctorVisitNoteViewSet, DoctorScheduleViewSet, DoctorTimeOffViewSet
+from core.views import SearchView
+from audit.views import AdminAuditLogViewSet
 
 
 admin_router = DefaultRouter()
@@ -20,6 +22,8 @@ doctor_router.register("visit-notes", DoctorVisitNoteViewSet, basename="doctor-v
 doctor_router.register("schedule", DoctorScheduleViewSet, basename="doctor-schedule")
 doctor_router.register("time-off", DoctorTimeOffViewSet, basename="doctor-timeoff")
 
+admin_router.register("audit-logs", AdminAuditLogViewSet, basename="admin-audit-logs")
+
 
 urlpatterns = [
     # auth
@@ -32,4 +36,8 @@ urlpatterns = [
     # role-separated routers
     path("admin/", include(admin_router.urls)),
     path("doctor/", include(doctor_router.urls)),
+
+    path("search/", SearchView.as_view(), name="search"),
+
+
 ]
