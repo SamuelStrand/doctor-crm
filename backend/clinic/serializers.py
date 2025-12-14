@@ -97,7 +97,9 @@ class AppointmentDoctorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ("id", "start_at", "end_at", "status", "reason", "comment", "patient", "patient_name", "service", "service_code", "room")
+        fields = (
+        "id", "start_at", "end_at", "status", "reason", "comment", "patient", "patient_name", "service", "service_code",
+        "room")
         read_only_fields = ("patient", "service", "room", "start_at", "end_at", "patient_name", "service_code")
 
     def get_patient_name(self, obj):
@@ -128,3 +130,54 @@ class VisitNoteSerializer(serializers.ModelSerializer):
             _raise_drf_validation(e)
         instance.save()
         return instance
+
+    def validate_appointment(self, appointment: Appointment):
+        request = self.context.get("request")
+        if request and request.user and appointment.doctor_id != request.user.id:
+            raise serializers.ValidationError("You can create notes only for your own appointments.")
+        return appointment
+
+
+class AttachmentSerializer(serializers.ModelSerializer):
+    visit_note = serializers.IntegerField(source="visit_note_id", read_only=True)
+
+    class Meta:
+        model = Attachment
+        fields = ("id", "visit_note", "file", "uploaded_by", "uploaded_at")
+        read_only_fields = ("uploaded_by", "uploaded_at")
+
+
+class PatientShortSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source="__str__", read_only=True)
+
+    class Meta:
+        model = Patient
+        fields = ("id", "full_name", "phone", "email", "birth_date", "gender")
+
+
+class AppointmentHistorySerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source="patient.__str__", read_only=True)
+    service_code = serializers.CharField(source="service.code", read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = (
+            "id",
+            "start_at",
+            "end_at",
+            "status",
+            "patient_id",
+            "patient_name",
+            "service_id",
+            "service_code",
+            "room_id",
+            "reason",
+        )
+
+
+class VisitNoteHistorySerializer(serializers.ModelSerializer):
+    appointment_id = serializers.IntegerField(source="appointment.id", read_only=True)
+
+    class Meta:
+        model = VisitNote
+        fields = ("id", "appointment_id", "note_text", "created_at", "updated_at")

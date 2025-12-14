@@ -9,6 +9,8 @@ from django.utils import timezone
 
 from accounts.models import User, UserRole, DoctorProfile
 from clinic.models import Patient, Service, Room, DoctorSchedule, Appointment, AppointmentStatus
+from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
 
 
 def _rand_phone():

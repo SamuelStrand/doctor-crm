@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "accounts",
     "clinic",
     "audit",
+    "ai_assistant",
 ]
 
 MIDDLEWARE = [

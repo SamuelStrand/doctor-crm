@@ -4,6 +4,7 @@ from .models import Patient, Service, Room, Appointment
 from .serializers import PatientSerializer, ServiceSerializer, RoomSerializer, AppointmentAdminSerializer
 from audit.utils import log_action
 from audit.models import AuditAction
+from .filters import AppointmentFilter
 
 
 class AdminPatientViewSet(viewsets.ModelViewSet):
@@ -65,7 +66,9 @@ class AdminAppointmentViewSet(viewsets.ModelViewSet):
     serializer_class = AppointmentAdminSerializer
     permission_classes = [IsAdminRole]
     search_fields = ("patient__first_name", "patient__last_name", "doctor__email", "service__code")
-
+    filterset_class = AppointmentFilter
+    ordering_fields = ("start_at", "end_at", "status")
+    ordering = ("-start_at",)
     def perform_create(self, serializer):
         obj = serializer.save()
         log_action(request=self.request, action=AuditAction.CREATE, obj=obj)

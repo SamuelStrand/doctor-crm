@@ -8,6 +8,9 @@ from clinic.views_doctor import DoctorAppointmentViewSet, DoctorVisitNoteViewSet
 from core.views import SearchView
 from audit.views import AdminAuditLogViewSet
 
+from clinic.views_doctor import DoctorPatientViewSet
+from clinic.views_reports import AdminAppointmentsReportView
+
 
 admin_router = DefaultRouter()
 admin_router.register("doctors", AdminDoctorViewSet, basename="admin-doctors")
@@ -24,6 +27,8 @@ doctor_router.register("time-off", DoctorTimeOffViewSet, basename="doctor-timeof
 
 admin_router.register("audit-logs", AdminAuditLogViewSet, basename="admin-audit-logs")
 
+doctor_router.register("patients", DoctorPatientViewSet, basename="doctor-patients")
+
 
 urlpatterns = [
     # auth
@@ -39,5 +44,8 @@ urlpatterns = [
 
     path("search/", SearchView.as_view(), name="search"),
 
+    path("ai/", include("ai_assistant.urls")),
+
+    path("admin/reports/appointments/", AdminAppointmentsReportView.as_view(), name="admin-reports-appointments"),
 
 ]
