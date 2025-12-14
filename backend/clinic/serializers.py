@@ -140,11 +140,22 @@ class VisitNoteSerializer(serializers.ModelSerializer):
 
 class AttachmentSerializer(serializers.ModelSerializer):
     visit_note = serializers.IntegerField(source="visit_note_id", read_only=True)
+    file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Attachment
-        fields = ("id", "visit_note", "file", "uploaded_by", "uploaded_at")
+        fields = ("id", "visit_note", "file", "file_url", "uploaded_by", "uploaded_at")
         read_only_fields = ("uploaded_by", "uploaded_at")
+
+    def get_file_url(self, obj):
+        if not obj.file:
+            return ""
+        request = self.context.get("request")
+        url = obj.file.url
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
 
 
 class PatientShortSerializer(serializers.ModelSerializer):

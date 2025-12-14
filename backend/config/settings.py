@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "clinic",
     "audit",
     "ai_assistant",
+    "rest_framework_simplejwt.token_blacklist",
+
 ]
 
 MIDDLEWARE = [

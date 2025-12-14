@@ -73,11 +73,12 @@ class DoctorVisitNoteViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get", "post"], parser_classes=[MultiPartParser, FormParser])
     def attachments(self, request, pk=None):
+
         note = self.get_object()
 
         if request.method == "GET":
             qs = note.attachments.all().order_by("-uploaded_at")
-            return Response(AttachmentSerializer(qs, many=True).data)
+            return Response(AttachmentSerializer(qs, many=True, context={"request": request}).data)
 
         ser = AttachmentSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
@@ -89,7 +90,8 @@ class DoctorVisitNoteViewSet(viewsets.ModelViewSet):
             obj=att,
             meta={"type": "attachment_upload", "visit_note_id": note.id},
         )
-        return Response(AttachmentSerializer(att).data, status=201)
+
+        return Response(AttachmentSerializer(att, context={"request": request}).data, status=201)
 
     @action(detail=True, methods=["delete"], url_path=r"attachments/(?P<attachment_id>\d+)")
     def delete_attachment(self, request, pk=None, attachment_id=None):

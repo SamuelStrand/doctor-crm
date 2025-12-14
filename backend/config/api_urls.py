@@ -10,6 +10,7 @@ from audit.views import AdminAuditLogViewSet
 
 from clinic.views_doctor import DoctorPatientViewSet
 from clinic.views_reports import AdminAppointmentsReportView
+from accounts.auth_views import LogoutView
 
 
 admin_router = DefaultRouter()
@@ -47,5 +48,6 @@ urlpatterns = [
     path("ai/", include("ai_assistant.urls")),
 
     path("admin/reports/appointments/", AdminAppointmentsReportView.as_view(), name="admin-reports-appointments"),
+    path("auth/logout/", LogoutView.as_view(), name="logout"),
 
 ]
