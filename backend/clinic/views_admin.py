@@ -65,7 +65,16 @@ class AdminAppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.select_related("patient", "doctor", "service", "room").all().order_by("-start_at")
     serializer_class = AppointmentAdminSerializer
     permission_classes = [IsAdminRole]
-    search_fields = ("patient__first_name", "patient__last_name", "doctor__email", "service__code")
+    search_fields = (
+        "reason",
+        "comment",
+        "patient__first_name",
+        "patient__last_name",
+        "patient__id",
+        "doctor__email",
+        "doctor__id",
+        "service__code",
+    )
     filterset_class = AppointmentFilter
     ordering_fields = ("start_at", "end_at", "status")
     ordering = ("-start_at",)
