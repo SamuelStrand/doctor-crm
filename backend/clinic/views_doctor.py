@@ -63,7 +63,15 @@ class DoctorVisitNoteViewSet(viewsets.ModelViewSet):
         return VisitNote.objects.select_related("appointment", "patient").filter(doctor=self.request.user).order_by("-created_at")
 
     def perform_create(self, serializer):
-        serializer.save(doctor=self.request.user)
+        appt = serializer.validated_data["appointment"]
+
+        if appt.doctor_id != self.request.user.id:
+            raise DjangoValidationError("You can create a note only for your own appointment.")
+
+        serializer.save(
+            doctor=self.request.user,
+            patient=appt.patient,
+        )
 
 
     def retrieve(self, request, *args, **kwargs):
