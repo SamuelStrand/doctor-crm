@@ -36,6 +36,20 @@ class DoctorAppointmentViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     filterset_class = AppointmentFilter
     ordering_fields = ("start_at", "end_at", "status")
     ordering = ("-start_at",)
+    search_fields = (
+        "id",
+        "reason",
+        "comment",
+        "patient__first_name",
+        "patient__last_name",
+        "patient__phone",
+        "service__code",
+        "service__name_en",
+        "service__name_ru",
+        "service__name_kk",
+        "room__name",
+    )
+
     def get_queryset(self):
         return Appointment.objects.select_related("patient", "service", "room").filter(doctor=self.request.user).order_by("-start_at")
 
