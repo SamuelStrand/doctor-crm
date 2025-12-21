@@ -1,0 +1,496 @@
+/* Page */
+/* фикс всех подобных "уезжаний" */
+.pPage, .pPage * { box-sizing: border-box; }
+
+.pCard { overflow: hidden; } /* чтобы ничего не вылезало за радиусы */
+
+.pEmptyBar {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+
+.pPage {
+  padding: 24px;
+  background: #f5f7fb;
+  min-height: 100vh;
+  color: #0f172a;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.pTop {
+  max-width: 1200px;
+  margin: 0 auto 14px auto;
+}
+
+.pBreadcrumb {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.pTitle {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 14px 0;
+}
+
+.pToolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pSearch {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f1f3f7;
+  border: 1px solid #e6eaf2;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.pIcon {
+  color: #9aa6b2;
+  display: inline-flex;
+}
+
+.pSearchInput {
+  border: 0;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 14px;
+}
+
+.pSelect {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid #e6eaf2;
+  background: #ffffff;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.pFilterBtn {
+  height: 44px;
+  width: 44px;
+  border-radius: 14px;
+  border: 1px solid #e6eaf2;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #334155;
+}
+
+.pFilterBtn:hover {
+  background: #f7f9ff;
+}
+
+.pAddBtn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 0;
+  background: #2f6fed;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 18px rgba(47, 111, 237, 0.18);
+}
+
+.pAddBtn:hover {
+  filter: brightness(0.98);
+}
+
+.pAddPlus {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pMeta {
+  margin-top: 10px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.pLoading {
+  background: #ffffff;
+  border: 1px solid #e6eaf2;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.pError {
+  margin-top: 10px;
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 14px;
+  padding: 12px;
+  color: #9f1239;
+}
+
+/* Grid */
+.pGrid {
+  max-width: 1200px;
+  margin: 14px auto 0 auto;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .pGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .pGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card */
+.pCard {
+  background: #fff;
+  border: 1px solid #e6eaf2;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+}
+
+.pCardTop {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.pAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #2f6fed;
+  color: #fff;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  letter-spacing: 0.5px;
+}
+
+.pCardMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.pNameRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.pName {
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pBadge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #eaf1ff;
+  color: #2f6fed;
+  border: 1px solid #d7e4ff;
+}
+
+.pPhone {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* menu dots */
+.pDots {
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  color: #64748b;
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+.pDots:hover {
+  background: #f3f6ff;
+}
+
+.menuWrap {
+  position: relative;
+}
+
+.pMenu {
+  position: absolute;
+  right: 0;
+  top: 38px;
+  background: #fff;
+  border: 1px solid #e6eaf2;
+  border-radius: 14px;
+  padding: 6px;
+  min-width: 160px;
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.12);
+  z-index: 5;
+}
+
+.pMenu button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 10px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.pMenu button:hover {
+  background: #f5f7fb;
+}
+
+.pMenu .danger {
+  color: #b91c1c;
+}
+
+/* bottom */
+.pCardBottom {
+  margin-top: 12px;
+}
+
+.pSubTitle {
+  color: #94a3b8;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.pDatePill {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff4d6;
+  border: 1px solid #f6d592;
+  color: #a16207;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.pEmptyBar {
+  width: 100%;
+  background: #f3f4f6;
+  border-radius: 12px;
+  padding: 12px;
+  color: #6b7280;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Pagination */
+.pPager {
+  max-width: 1200px;
+  margin: 18px auto 0 auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 20px;
+}
+
+.pPagerBtn {
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 10px 10px;
+  border-radius: 12px;
+}
+
+.pPagerBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pPageNum {
+  border: 1px solid #e6eaf2;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.pPageNum.active {
+  border-color: #cfe0ff;
+  background: #eef4ff;
+  color: #2f6fed;
+  font-weight: 800;
+}
+
+/* Empty state */
+.pEmptyState {
+  grid-column: 1 / -1;
+  background: #ffffff;
+  border: 1px dashed #dbe3f1;
+  border-radius: 18px;
+  padding: 18px;
+  text-align: center;
+  color: #64748b;
+}
+
+/* Modal */
+.pModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 50;
+}
+
+.pModal {
+  width: min(900px, 96vw);
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid #e6eaf2;
+  box-shadow: 0 22px 46px rgba(15, 23, 42, 0.25);
+}
+
+.pModalHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eef2f8;
+}
+
+.pModalTitle {
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.pModalClose {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #e6eaf2;
+  background: #fff;
+  cursor: pointer;
+  font-size: 18px;
+  color: #64748b;
+}
+
+.pModalClose:hover {
+  background: #f5f7fb;
+}
+
+.pForm {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.pField {
+  display: grid;
+  gap: 6px;
+}
+
+.pField span {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.pField input,
+.pField select,
+.pField textarea {
+  border: 1px solid #e6eaf2;
+  border-radius: 14px;
+  padding: 11px 12px;
+  outline: none;
+  font-size: 14px;
+  background: #fff;
+}
+
+.pField input:focus,
+.pField select:focus,
+.pField textarea:focus {
+  border-color: #cfe0ff;
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12);
+}
+
+.pFormGrid3 {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.pFormGrid2 {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 820px) {
+  .pFormGrid3,
+  .pFormGrid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pFormActions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.pPrimary {
+  border: 0;
+  background: #2f6fed;
+  color: #fff;
+  font-weight: 800;
+  padding: 10px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.pGhost {
+  border: 1px solid #e6eaf2;
+  background: #fff;
+  color: #334155;
+  font-weight: 800;
+  padding: 10px 14px;
+  border-radius: 14px;
+  cursor: pointer;
+}
