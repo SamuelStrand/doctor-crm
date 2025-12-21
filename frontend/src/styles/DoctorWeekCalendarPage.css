@@ -1,0 +1,310 @@
+.djPage, .djPage * { box-sizing: border-box; }
+
+.djPage{
+  --accent: #8b3dff;
+  padding:24px;
+  background:#f5f7fb;
+  min-height:100vh;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color:#0f172a;
+}
+
+.djTop{ max-width: 1280px; margin: 0 auto 14px auto; }
+.djBreadcrumb{ font-size:13px; color:#94a3b8; }
+.djTitle{ margin:6px 0 10px 0; font-size:32px; font-weight:950; }
+
+.djToolbar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.djSelectPill{
+  height:44px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 12px;
+  border-radius:14px;
+  border:1px solid rgba(139,61,255,.22);
+  background: rgba(139,61,255,.10);
+}
+.djPillIcon{
+  width:26px; height:26px;
+  display:grid; place-items:center;
+  border-radius:10px;
+  background: rgba(139,61,255,.18);
+}
+.djSelectPill select{
+  border:0; background:transparent;
+  font-weight:900; color:#4c1d95;
+  outline:none;
+  font-size:14px;
+}
+
+.djDateControls{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.djNavBtn{
+  width:40px; height:44px;
+  border-radius:14px;
+  border:1px solid #e6eaf2;
+  background:#fff;
+  font-size:18px;
+  font-weight:900;
+  cursor:pointer;
+}
+.djNavBtn:hover{ background:#f5f7fb; }
+
+.djDate{
+  height:44px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid #e6eaf2;
+  background:#fff;
+  display:flex;
+  align-items:center;
+  font-weight:950;
+}
+.djDateText{ font-size:16px; }
+
+.djDateInput{
+  height:44px;
+  padding:0 12px;
+  border-radius:14px;
+  border:1px solid #e6eaf2;
+  background:#fff;
+  font-weight:900;
+  outline:none;
+}
+
+.djGhostBtn{
+  height:44px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid #e6eaf2;
+  background:#fff;
+  font-weight:950;
+  cursor:pointer;
+}
+.djGhostBtn:hover{ background:#f5f7fb; }
+
+.djRight{ margin-left:auto; }
+
+.djFilterBtn{
+  height:44px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid #e6eaf2;
+  background:#fff;
+  font-weight:950;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.djFilterBtn:hover{ background:#f5f7fb; }
+.djFilterIcon{ opacity:.7; }
+
+.djError{
+  margin-top:12px;
+  background:#fff1f2;
+  border:1px solid #fecdd3;
+  border-radius:14px;
+  padding:12px;
+  color:#9f1239;
+}
+
+/* board */
+.djBoard{
+  max-width: 1280px;
+  margin: 0 auto;
+  background:#fff;
+  border:1px solid #e6eaf2;
+  border-radius:18px;
+  box-shadow: 0 10px 22px rgba(15,23,42,.05);
+  overflow:hidden;
+}
+
+.djLoading{
+  padding:14px 16px;
+  color:#64748b;
+  font-weight:900;
+}
+
+.djTableWrap{
+  overflow:auto;
+}
+
+/* grid */
+.djGrid{
+  display:grid;
+  min-width: 900px;
+}
+
+.djHeadCell{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background:#fff;
+  border-bottom:1px solid #eef2f8;
+  border-right:1px solid #eef2f8;
+  padding:12px 12px;
+}
+
+.djTimeHead{
+  background:#fbfcff;
+  color:#64748b;
+  font-weight:950;
+}
+
+.djDoc{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.djAvatar{
+  width:40px;
+  height:40px;
+  border-radius:999px;
+  background: rgba(139,61,255,.16);
+  border:1px solid rgba(139,61,255,.22);
+  color:#4c1d95;
+  display:grid;
+  place-items:center;
+  font-weight:1000;
+}
+
+.djDocName{
+  font-weight:1000;
+  line-height:1.1;
+}
+.djDocSub{
+  margin-top:2px;
+  font-size:12px;
+  color:#94a3b8;
+  font-weight:900;
+}
+
+.djTimeCell{
+  border-right:1px solid #eef2f8;
+  border-bottom:1px solid #eef2f8;
+  padding:14px 12px;
+  background:#faf7ff;
+  color:#0f172a;
+  font-weight:1000;
+  position: sticky;
+  left: 0;
+  z-index: 4;
+}
+
+.djCell{
+  border-right:1px solid #eef2f8;
+  border-bottom:1px solid #eef2f8;
+  padding:12px;
+  min-height:72px;
+  background:#fff;
+}
+
+.djEmptyCell{
+  background:#fff;
+}
+.djAvailable{
+  color:#94a3b8;
+  font-weight:900;
+}
+
+/* appointment card in cell */
+.djBusy{
+  background: #fffdf7;
+}
+
+.djAppt{
+  display:block;
+  text-decoration:none;
+  color:#0f172a;
+  border-radius:14px;
+  padding:10px 10px;
+  border:1px solid #f1f5f9;
+  background:#fffdf7;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.djAppt:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(15,23,42,.07);
+}
+
+.djApptTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+
+.djApptName{
+  font-weight:1000;
+  line-height:1.1;
+}
+
+.djApptSub{
+  margin-top:6px;
+  color:#64748b;
+  font-weight:900;
+  font-size:12.5px;
+}
+
+.djApptTime{
+  margin-top:8px;
+  font-size:12px;
+  color:#94a3b8;
+  font-weight:900;
+}
+
+/* status pills */
+.djStatus{
+  font-size:12px;
+  font-weight:1000;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid transparent;
+  white-space:nowrap;
+}
+
+.djStatus.scheduled{
+  background: rgba(139,61,255,.12);
+  border-color: rgba(139,61,255,.25);
+  color:#4c1d95;
+}
+.djStatus.confirmed{
+  background:#ecfeff;
+  border-color:#a5f3fc;
+  color:#155e75;
+}
+.djStatus.completed{
+  background:#e9fff2;
+  border-color:#b7f2cd;
+  color:#15803d;
+}
+.djStatus.cancelled{
+  background:#fff1f2;
+  border-color:#fecdd3;
+  color:#b91c1c;
+}
+.djStatus.noshow{
+  background:#fff7ed;
+  border-color:#fed7aa;
+  color:#9a3412;
+}
+
+/* make busy cells slightly tinted by status */
+.djCell.scheduled .djAppt{ border-color: rgba(139,61,255,.25); }
+.djCell.confirmed  .djAppt{ border-color: #a5f3fc; }
+.djCell.completed  .djAppt{ border-color: #b7f2cd; }
+.djCell.cancelled  .djAppt{ border-color: #fecdd3; }
+.djCell.noshow     .djAppt{ border-color: #fed7aa; }

@@ -1,0 +1,262 @@
+.daPage, .daPage * { box-sizing: border-box; }
+
+.daPage{
+  padding:24px;
+  background:#f5f7fb;
+  min-height:100vh;
+  color:#0f172a;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.daTop{ max-width:1200px; margin:0 auto 14px auto; }
+
+.daBreadcrumb{ font-size:13px; color:#94a3b8; margin-bottom:4px; }
+
+.daHeadRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.daTitle{ font-size:28px; font-weight:900; margin:0; }
+
+.daMeta{
+  color:#64748b;
+  font-size:13px;
+  font-weight:900;
+  background:#fff;
+  border:1px solid #e6eaf2;
+  border-radius:999px;
+  padding:6px 12px;
+}
+
+.daToolbar{
+  margin-top:14px;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.daSearch{ min-width: 260px; flex: 1; }
+
+.daChip{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 12px;
+  height:44px;
+  background:#fff;
+  border:1px solid #e6eaf2;
+  border-radius:14px;
+  color:#64748b;
+  font-weight:900;
+  font-size:12px;
+}
+
+.daSelect, .daInput{
+  border:0;
+  outline:none;
+  font-size:14px;
+  color:#0f172a;
+  background:transparent;
+  min-width: 140px;
+}
+
+.daInput{
+  min-width: 130px;
+}
+
+.daGhost{
+  height:44px;
+  padding:0 14px;
+  border-radius:14px;
+  border:1px solid #e6eaf2;
+  background:#fff;
+  color:#334155;
+  font-weight:1000;
+  cursor:pointer;
+}
+.daGhost:hover{ background:#f5f7fb; }
+.daGhost:disabled{ opacity:.6; cursor:not-allowed; }
+
+.daLoading{
+  margin-top:10px;
+  display:inline-flex;
+  background:#fff;
+  border:1px solid #e6eaf2;
+  padding:6px 12px;
+  border-radius:999px;
+  color:#64748b;
+  font-weight:900;
+  font-size:13px;
+}
+
+.daError{
+  margin-top:10px;
+  background:#fff1f2;
+  border:1px solid #fecdd3;
+  border-radius:14px;
+  padding:12px;
+  color:#9f1239;
+}
+
+/* card */
+.daCard{
+  max-width:1200px;
+  margin: 14px auto 0 auto;
+  background:#fff;
+  border:1px solid #e6eaf2;
+  border-radius:18px;
+  box-shadow: 0 8px 18px rgba(15,23,42,.04);
+  overflow:hidden;
+}
+
+.daCardTitle{
+  padding:14px 16px;
+  border-bottom:1px solid #eef2f8;
+  background:#fbfcff;
+  color:#64748b;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+
+.daTableWrap{ overflow:auto; }
+
+.daTable{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  min-width: 980px;
+}
+
+.daTh, .daTd{
+  border-bottom:1px solid #eef2f8;
+  padding:12px 12px;
+  background:#fff;
+  font-size:13px;
+  text-align:left;
+}
+
+.daTh{
+  position:sticky;
+  top:0;
+  z-index:2;
+  background:#fbfcff;
+  color:#64748b;
+  font-size:12px;
+  font-weight:900;
+}
+
+.daTr:hover .daTd{ background:#fafbff; }
+
+.daMono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color:#334155;
+}
+
+.daEll{
+  max-width: 280px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.daActions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  white-space:nowrap;
+}
+
+.daLink{
+  color:#4c1d95;
+  text-decoration:none;
+  font-weight:1000;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid rgba(139,61,255,.22);
+  background: rgba(139,61,255,.10);
+}
+.daLink:hover{ background: rgba(139,61,255,.16); }
+
+.daPrimarySm{
+  height:36px;
+  padding:0 12px;
+  border-radius:12px;
+  border:0;
+  background:#8b3dff;
+  color:#fff;
+  font-weight:1000;
+  cursor:pointer;
+  box-shadow: 0 10px 18px rgba(139,61,255,.18);
+}
+.daPrimarySm:disabled{ opacity:.65; cursor:not-allowed; }
+
+.daEmpty{
+  text-align:center;
+  color:#94a3b8;
+  font-weight:900;
+}
+
+/* badges */
+.daBadge{
+  display:inline-flex;
+  align-items:center;
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:1000;
+  font-size:12px;
+  border:1px solid transparent;
+  background:#f1f5f9;
+  color:#334155;
+}
+
+.daBadge.SCHEDULED{
+  background: rgba(139,61,255,.12);
+  border-color: rgba(139,61,255,.25);
+  color:#4c1d95;
+}
+.daBadge.CONFIRMED{
+  background:#ecfeff;
+  border-color:#a5f3fc;
+  color:#155e75;
+}
+.daBadge.COMPLETED{
+  background:#e9fff2;
+  border-color:#b7f2cd;
+  color:#15803d;
+}
+.daBadge.CANCELLED{
+  background:#fff1f2;
+  border-color:#fecdd3;
+  color:#b91c1c;
+}
+.daBadge.NO_SHOW{
+  background:#fff7ed;
+  border-color:#fed7aa;
+  color:#9a3412;
+}
+
+/* pager */
+.daPager{
+  padding:12px 16px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.daPageNum{
+  font-weight:1000;
+  color:#334155;
+}
+
+.daPagerMeta{
+  margin-left:auto;
+  color:#64748b;
+  font-weight:900;
+}

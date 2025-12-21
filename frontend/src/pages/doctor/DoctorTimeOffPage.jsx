@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { doctorApi } from "../../api/doctorApi";
+import "../../styles/DoctorTimeOffPage.css";
 
 function toInputDatetime(iso) {
   if (!iso) return "";
@@ -16,6 +17,16 @@ function toInputDatetime(iso) {
 function toISO(dtLocal) {
   if (!dtLocal) return null;
   return new Date(dtLocal).toISOString();
+}
+
+function fmtDT(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
 }
 
 function prettyError(e) {
@@ -46,7 +57,10 @@ export default function DoctorTimeOffPage() {
     setLoading(true);
     setErrRaw(null);
     try {
-      const data = await doctorApi.listTimeOff({ page_size: 200, ordering: "-start_at" });
+      const data = await doctorApi.listTimeOff({
+        page_size: 200,
+        ordering: "-start_at",
+      });
       const list = data?.results ?? data ?? [];
       setItems(list);
     } catch (e) {
@@ -98,6 +112,7 @@ export default function DoctorTimeOffPage() {
     setStartAt(toInputDatetime(row.start_at));
     setEndAt(toInputDatetime(row.end_at));
     setReason(row.reason ?? "");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const onDelete = async (id) => {
@@ -114,87 +129,160 @@ export default function DoctorTimeOffPage() {
 
   const errText = prettyError(errRaw);
 
+  const total = items.length;
+
+  const quick = useMemo(() => {
+    const now = new Date();
+    const next = [...items]
+      .filter((x) => x?.start_at && new Date(x.start_at) >= now)
+      .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))[0];
+    return next || null;
+  }, [items]);
+
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Doctor • Time-off</h2>
+    <div className="dto-page">
+      <div className="dto-top">
+        <div className="dto-kicker">Doctor</div>
+        <div className="dto-titleRow">
+          <h1 className="dto-title">Time-off</h1>
 
-      <form
-        onSubmit={submit}
-        style={{
-          display: "grid",
-          gap: 10,
-          maxWidth: 560,
-          padding: 12,
-          border: "1px solid #eee",
-          borderRadius: 12,
-          marginBottom: 14,
-        }}
-      >
-        <div style={{ fontWeight: 700 }}>{editingId ? "Edit interval" : "Add interval"}</div>
-
-        <label>
-          Start:
-          <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} />
-        </label>
-
-        <label>
-          End:
-          <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} />
-        </label>
-
-        <label>
-          Reason:
-          <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason" />
-        </label>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="submit" disabled={saving}>
-            {saving ? "Saving..." : editingId ? "Save" : "Create"}
-          </button>
-          {editingId && (
-            <button type="button" onClick={resetForm}>
-              Cancel
-            </button>
-          )}
+          <div className="dto-right">
+            <div className="dto-pill">Total: {total}</div>
+          </div>
         </div>
-      </form>
+
+        {quick && (
+          <div className="dto-hint">
+            <span className="dto-hintLabel">Next:</span>{" "}
+            <b>{fmtDT(quick.start_at)}</b> — <b>{fmtDT(quick.end_at)}</b>
+            {quick.reason ? (
+              <>
+                {" "}
+                · <span className="dto-muted">{quick.reason}</span>
+              </>
+            ) : null}
+          </div>
+        )}
+      </div>
 
       {errText && (
-        <pre style={{ background: "#eee", padding: 12, marginBottom: 12, whiteSpace: "pre-wrap" }}>
-          {errText}
-        </pre>
+        <div className="dto-error">
+          <div className="dto-errorTitle">Error</div>
+          <div className="dto-errorBody">{errText}</div>
+        </div>
       )}
 
-      {loading && <p>Loading…</p>}
-      {!loading && items.length === 0 && <p>No time-off yet</p>}
+      <div className="dto-grid">
+        {/* Form card */}
+        <div className="dto-card">
+          <div className="dto-cardHead">
+            <div className="dto-cardTitle">
+              {editingId ? `Edit interval #${editingId}` : "Add interval"}
+            </div>
+            {editingId && (
+              <button className="dto-btn dto-btnGhost" type="button" onClick={resetForm}>
+                Cancel
+              </button>
+            )}
+          </div>
 
-      {!loading && items.length > 0 && (
-        <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%" }}>
-          <thead>
-            <tr>
-              <th>Start</th>
-              <th>End</th>
-              <th>Reason</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((x) => (
-              <tr key={x.id}>
-                <td>{x.start_at}</td>
-                <td>{x.end_at}</td>
-                <td>{x.reason ?? "-"}</td>
-                <td style={{ whiteSpace: "nowrap" }}>
-                  <button onClick={() => onEdit(x)} style={{ marginRight: 8 }}>
-                    Edit
-                  </button>
-                  <button onClick={() => onDelete(x.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          <form onSubmit={submit} className="dto-form">
+            <div className="dto-field">
+              <div className="dto-label">Start</div>
+              <input
+                className="dto-input"
+                type="datetime-local"
+                value={startAt}
+                onChange={(e) => setStartAt(e.target.value)}
+              />
+            </div>
+
+            <div className="dto-field">
+              <div className="dto-label">End</div>
+              <input
+                className="dto-input"
+                type="datetime-local"
+                value={endAt}
+                onChange={(e) => setEndAt(e.target.value)}
+              />
+            </div>
+
+            <div className="dto-field">
+              <div className="dto-label">Reason</div>
+              <input
+                className="dto-input"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Reason (optional)"
+              />
+            </div>
+
+            <div className="dto-actions">
+              <button className="dto-btn dto-btnPrimary" type="submit" disabled={saving}>
+                {saving ? "Saving..." : editingId ? "Save" : "Create"}
+              </button>
+              <button
+                className="dto-btn dto-btnGhost"
+                type="button"
+                onClick={() => {
+                  resetForm();
+                  setErrRaw(null);
+                }}
+              >
+                Clear
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* List card */}
+        <div className="dto-card">
+          <div className="dto-cardHead">
+            <div className="dto-cardTitle">Intervals</div>
+            <button className="dto-btn dto-btnGhost" type="button" onClick={load} disabled={loading}>
+              {loading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
+
+          {loading && <div className="dto-loading">Loading…</div>}
+
+          {!loading && items.length === 0 && (
+            <div className="dto-empty">No time-off yet</div>
+          )}
+
+          {!loading && items.length > 0 && (
+            <div className="dto-tableWrap">
+              <table className="dto-table">
+                <thead>
+                  <tr>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Reason</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((x) => (
+                    <tr key={x.id}>
+                      <td className="dto-mono">{fmtDT(x.start_at)}</td>
+                      <td className="dto-mono">{fmtDT(x.end_at)}</td>
+                      <td className="dto-reason">{x.reason ?? "—"}</td>
+                      <td className="dto-rowActions">
+                        <button className="dto-chip" onClick={() => onEdit(x)}>
+                          Edit
+                        </button>
+                        <button className="dto-chip dto-chipDanger" onClick={() => onDelete(x.id)}>
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,172 @@
+.afPage, .afPage * { box-sizing: border-box; }
+
+.afPage{
+  padding:24px;
+  background:#f5f7fb;
+  min-height:100vh;
+  color:#0f172a;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+.afTop{ max-width:980px; margin:0 auto 14px auto; }
+
+.afBack{
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  color:#64748b;
+  text-decoration:none;
+  font-weight:900;
+  padding:8px 10px;
+  border-radius:12px;
+}
+.afBack:hover{ background:#eef2ff; color:#4c1d95; }
+
+.afBreadcrumb{ font-size:13px; color:#94a3b8; margin-top:8px; }
+.afTitle{ font-size:28px; font-weight:900; margin:6px 0 0 0; }
+.afSub{ margin-top:6px; color:#64748b; font-weight:800; font-size:13px; }
+
+.afHeadRow{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:4px;
+}
+
+.afHeadActions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.afPrimary{
+  height:44px;
+  padding:0 16px;
+  border-radius:14px;
+  border:0;
+  background:#8b3dff;
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow: 0 10px 18px rgba(139,61,255,.18);
+}
+.afPrimary:disabled{ opacity:.65; cursor:not-allowed; }
+
+.afGhost{
+  height:44px;
+  padding:0 16px;
+  border-radius:14px;
+  border:1px solid #e6eaf2;
+  background:#fff;
+  color:#334155;
+  font-weight:900;
+  cursor:pointer;
+}
+.afGhost:hover{ background:#f5f7fb; }
+.afGhost:disabled{ opacity:.65; cursor:not-allowed; }
+
+.afLoading{
+  margin-top:10px;
+  display:inline-flex;
+  background:#fff;
+  border:1px solid #e6eaf2;
+  padding:6px 12px;
+  border-radius:999px;
+  color:#64748b;
+  font-weight:900;
+  font-size:13px;
+}
+
+.afError{
+  margin-top:10px;
+  background:#fff1f2;
+  border:1px solid #fecdd3;
+  border-radius:14px;
+  padding:12px;
+  color:#9f1239;
+}
+
+/* card */
+.afCard{
+  max-width:980px;
+  margin: 14px auto 0 auto;
+  background:#fff;
+  border:1px solid #e6eaf2;
+  border-radius:18px;
+  box-shadow: 0 8px 18px rgba(15,23,42,.04);
+  overflow:hidden;
+}
+.afCardTitle{
+  padding:14px 16px;
+  border-bottom:1px solid #eef2f8;
+  background:#fbfcff;
+  color:#64748b;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+
+.afForm{
+  padding:16px;
+  display:grid;
+  gap:14px;
+}
+
+.afGrid2{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap:12px;
+}
+@media (max-width: 820px){
+  .afGrid2{ grid-template-columns: 1fr; }
+  .afHeadActions{ display:none; } /* actions снизу останутся */
+}
+
+.afField{ display:grid; gap:6px; }
+
+.afLabel{
+  color:#64748b;
+  font-weight:900;
+  font-size:12px;
+}
+
+.afControl{
+  width:100%;
+  border:1px solid #e6eaf2;
+  border-radius:14px;
+  padding:11px 12px;
+  outline:none;
+  font-size:14px;
+  background:#fff;
+  color:#0f172a;
+}
+.afControl:focus{
+  border-color:#d6c2ff;
+  box-shadow: 0 0 0 3px rgba(139,61,255,.12);
+}
+
+.afTextarea{
+  resize: vertical;
+  min-height: 92px;
+}
+
+.afHint{
+  color:#94a3b8;
+  font-size:12px;
+  font-weight:800;
+}
+
+/* footer */
+.afFooter{
+  display:none;
+  gap:10px;
+  justify-content:flex-end;
+  padding-top:6px;
+  border-top:1px solid #eef2f8;
+  margin-top:2px;
+}
+@media (max-width: 820px){
+  .afFooter{ display:flex; }
+}

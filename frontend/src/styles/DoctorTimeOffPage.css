@@ -1,0 +1,288 @@
+:root{
+  --accent: #8b3dff;
+  --bg: #f6f8fc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e6eaf2;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.dto-page{
+  padding: 18px 20px 40px;
+  background: var(--bg);
+  min-height: calc(100vh - 60px);
+  color: var(--text);
+}
+
+.dto-top{ margin-bottom: 14px; }
+.dto-kicker{
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.dto-titleRow{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.dto-title{
+  margin: 0;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.dto-right{
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.dto-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.dto-hint{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(139,61,255,0.18);
+  background: linear-gradient(180deg, rgba(139,61,255,0.08), rgba(139,61,255,0.02));
+  color: var(--text);
+}
+.dto-hintLabel{ color: var(--muted); font-weight: 800; }
+.dto-muted{ color: var(--muted); }
+
+.dto-error{
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.dto-errorTitle{
+  font-weight: 900;
+  color: #be123c;
+  margin-bottom: 6px;
+}
+.dto-errorBody{
+  color: #9f1239;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.dto-grid{
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 980px){
+  .dto-grid{ grid-template-columns: 1fr; }
+}
+
+.dto-card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.dto-cardHead{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dto-cardTitle{
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.dto-form{
+  display: grid;
+  gap: 12px;
+}
+
+.dto-field{
+  display: grid;
+  gap: 6px;
+}
+
+.dto-label{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.dto-input{
+  width: 100%;
+  height: 42px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  outline: none;
+}
+.dto-input:focus{
+  border-color: rgba(139,61,255,0.45);
+  box-shadow: 0 0 0 4px rgba(139,61,255,0.12);
+}
+
+.dto-actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.dto-btn{
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 900;
+}
+.dto-btn:disabled{ opacity: .6; cursor: not-allowed; }
+
+.dto-btnPrimary{
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(139,61,255,0.22);
+}
+.dto-btnPrimary:hover{ filter: brightness(0.98); }
+
+.dto-btnGhost{
+  background: rgba(139,61,255,0.08);
+  border-color: rgba(139,61,255,0.22);
+  color: var(--accent);
+}
+
+.dto-loading{
+  color: var(--muted);
+  padding: 10px 2px;
+}
+.dto-empty{
+  padding: 14px;
+  color: var(--muted);
+  background: #f8fafc;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+}
+
+.dto-tableWrap{
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+
+.dto-table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+  background: #fff;
+}
+
+.dto-table thead th{
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--border);
+  background: #fbfcff;
+}
+
+.dto-table tbody td{
+  padding: 12px 12px;
+  border-bottom: 1px solid #f0f3f8;
+  vertical-align: middle;
+}
+
+.dto-table tbody tr:hover{
+  background: rgba(139,61,255,0.04);
+}
+
+.dto-mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.dto-reason{
+  color: var(--text);
+}
+
+.dto-rowActions{
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dto-chip{
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(139,61,255,0.22);
+  background: rgba(139,61,255,0.08);
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 900;
+  margin-left: 8px;
+}
+.dto-chip:first-child{ margin-left: 0; }
+
+.dto-chipDanger{
+  border-color: rgba(239,68,68,0.25);
+  background: rgba(239,68,68,0.08);
+  color: #dc2626;
+}
+/* FIX: datetime-local выглядит "съехавшим" вправо в Chrome */
+.dto-input {
+  text-align: left;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* чтобы внутри дата/время не имели лишних внутренних паддингов */
+.dto-input[type="datetime-local"] {
+  padding-right: 44px; /* место под иконку календаря */
+}
+
+.dto-input[type="datetime-local"]::-webkit-datetime-edit {
+  padding: 0;
+}
+
+.dto-input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+.dto-input[type="datetime-local"]::-webkit-datetime-edit-text {
+  padding: 0 2px;
+  color: #94a3b8;
+}
+
+.dto-input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  opacity: 0.7;
+  cursor: pointer;
+}

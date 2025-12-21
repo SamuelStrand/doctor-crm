@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { doctorApi } from "../../api/doctorApi";
+import "../../styles/DoctorVisitNoteDetailPage.css";
 
 // ⚠️ если бэк ждёт другое поле — поменяй
 const FIELD_TEXT = "note_text"; // иногда "content" / "note"
 
+function fileNameFromAttachment(a) {
+  return a?.filename || a?.file_name || a?.file || (a?.id ? `attachment-${a.id}` : "attachment");
+}
+function fileUrlFromAttachment(a) {
+  return a?.file_url || a?.url || a?.file || a?.download_url || "#";
+}
+
 export default function DoctorVisitNoteDetailPage() {
   const { id } = useParams();
+  const nav = useNavigate();
 
   const [note, setNote] = useState(null);
   const [text, setText] = useState("");
@@ -14,6 +23,11 @@ export default function DoctorVisitNoteDetailPage() {
   const [file, setFile] = useState(null);
 
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [deletingNote, setDeletingNote] = useState(false);
+  const [deletingAttId, setDeletingAttId] = useState(null);
+
   const [err, setErr] = useState(null);
 
   const load = async () => {
@@ -22,9 +36,12 @@ export default function DoctorVisitNoteDetailPage() {
     try {
       const n = await doctorApi.getVisitNote(id);
       setNote(n);
-      setText(n[FIELD_TEXT] ?? "");
+      setText(n?.[FIELD_TEXT] ?? "");
+
+      // attachments могут быть пагинированными
       const att = await doctorApi.listAttachments(id);
-      setAttachments(att.results ?? att); // вдруг тоже пагинируется
+      const list = att?.results ?? att ?? [];
+      setAttachments(Array.isArray(list) ? list : []);
     } catch (e) {
       setErr(e?.response?.data ?? { detail: e.message });
     } finally {
@@ -32,107 +49,218 @@ export default function DoctorVisitNoteDetailPage() {
     }
   };
 
-  useEffect(() => { load(); }, [id]); // eslint-disable-line
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line
+  }, [id]);
 
   const save = async () => {
     setErr(null);
+    setSaving(true);
     try {
       await doctorApi.patchVisitNote(id, { [FIELD_TEXT]: text });
       await load();
     } catch (e) {
       setErr(e?.response?.data ?? { detail: e.message });
+    } finally {
+      setSaving(false);
     }
   };
 
   const upload = async () => {
     if (!file) return;
     setErr(null);
+    setUploading(true);
     try {
       await doctorApi.uploadAttachment(id, file);
       setFile(null);
       await load();
     } catch (e) {
       setErr(e?.response?.data ?? { detail: e.message });
+    } finally {
+      setUploading(false);
     }
   };
 
   const removeAttachment = async (attachmentId) => {
+    if (!confirm("Delete this attachment?")) return;
     setErr(null);
+    setDeletingAttId(attachmentId);
     try {
       await doctorApi.deleteAttachment(id, attachmentId);
       await load();
     } catch (e) {
       setErr(e?.response?.data ?? { detail: e.message });
+    } finally {
+      setDeletingAttId(null);
     }
   };
 
   const removeNote = async () => {
     if (!confirm("Delete this note?")) return;
     setErr(null);
+    setDeletingNote(true);
     try {
       await doctorApi.deleteVisitNote(id);
-      window.location.href = "/doctor/visit-notes";
+      nav("/doctor/visit-notes");
     } catch (e) {
       setErr(e?.response?.data ?? { detail: e.message });
+    } finally {
+      setDeletingNote(false);
     }
   };
 
+  const appointmentLabel =
+    note?.appointment?.id ??
+    note?.appointment_id ??
+    note?.appointment ??
+    "-";
+
+  const patientLabel =
+    note?.patient?.full_name ??
+    note?.patient_name ??
+    (note?.patient ? `Patient #${note.patient}` : "-");
+
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <Link to="/doctor/visit-notes">← Back</Link>
-        <h2 style={{ margin: 0 }}>Visit note #{id}</h2>
+    <div className="vndPage">
+      <div className="vndTop">
+        <Link className="vndBack" to="/doctor/visit-notes">← Back</Link>
+
+        <div className="vndHeaderRow">
+          <div>
+            <div className="vndBreadcrumb">Doctor</div>
+            <h1 className="vndTitle">Visit note #{id}</h1>
+          </div>
+
+          <div className="vndHeaderActions">
+            <button className="vndBtnPrimary" onClick={save} disabled={saving || loading || !note}>
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button className="vndBtnDanger" onClick={removeNote} disabled={deletingNote || loading || !note}>
+              {deletingNote ? "Deleting..." : "Delete note"}
+            </button>
+          </div>
+        </div>
+
+        {err && (
+          <div className="vndError">
+            <pre>{JSON.stringify(err, null, 2)}</pre>
+          </div>
+        )}
       </div>
 
-      {err && <pre style={{ background: "#eee", padding: 12 }}>{JSON.stringify(err, null, 2)}</pre>}
-      {loading && <p>Loading…</p>}
+      {loading && <div className="vndLoading">Loading…</div>}
 
-      {note && (
-        <>
-          <div style={{ marginTop: 12 }}>
-            <div style={{ marginBottom: 8 }}>
-              <b>Appointment:</b> {note.appointment?.id ?? note.appointment ?? "-"}{" "}
-              <b style={{ marginLeft: 12 }}>Patient:</b> {note.patient?.full_name ?? note.patient ?? "-"}
+      {note && !loading && (
+        <div className="vndGrid">
+          {/* LEFT: note */}
+          <div className="vndCard">
+            <div className="vndCardTitle">Details</div>
+
+            <div className="vndMeta">
+              <div className="vndMetaRow">
+                <span className="vndMetaK">Appointment</span>
+                <span className="vndMetaV">#{appointmentLabel}</span>
+              </div>
+              <div className="vndMetaRow">
+                <span className="vndMetaK">Patient</span>
+                <span className="vndMetaV">{patientLabel}</span>
+              </div>
+              <div className="vndMetaRow">
+                <span className="vndMetaK">Created</span>
+                <span className="vndMetaV">{note?.created_at ?? "—"}</span>
+              </div>
+              <div className="vndMetaRow">
+                <span className="vndMetaK">Updated</span>
+                <span className="vndMetaV">{note?.updated_at ?? "—"}</span>
+              </div>
             </div>
 
-            <textarea
-              rows={8}
-              style={{ width: "100%" }}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
+            <div className="vndField">
+              <label className="vndLabel">Note text</label>
+              <textarea
+                className="vndTextarea"
+                rows={10}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Write note…"
+              />
+            </div>
 
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button onClick={save}>Save</button>
-              <button onClick={removeNote}>Delete note</button>
+            <div className="vndBottomActions">
+              <button className="vndBtnPrimary" onClick={save} disabled={saving}>
+                {saving ? "Saving..." : "Save"}
+              </button>
+              <button className="vndBtnGhost" onClick={() => setText(note?.[FIELD_TEXT] ?? "")} disabled={saving}>
+                Revert
+              </button>
             </div>
           </div>
 
-          <hr style={{ margin: "16px 0" }} />
+          {/* RIGHT: attachments */}
+          <div className="vndCard">
+            <div className="vndCardTitle">Attachments</div>
 
-          <h3>Attachments</h3>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-            <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-            <button onClick={upload} disabled={!file}>Upload</button>
+            <div className="vndUploadRow">
+              <label className="vndFilePick">
+                <input
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                />
+                <span>{file ? file.name : "Choose file"}</span>
+              </label>
+
+              <button
+                className="vndBtnPrimary"
+                onClick={upload}
+                disabled={!file || uploading}
+              >
+                {uploading ? "Uploading..." : "Upload"}
+              </button>
+            </div>
+
+            {attachments.length === 0 ? (
+              <div className="vndEmpty">No attachments</div>
+            ) : (
+              <div className="vndAttList">
+                {attachments.map((a) => (
+                  <div key={a.id} className="vndAttItem">
+                    <div className="vndAttMain">
+                      <div className="vndAttName">
+                        {fileNameFromAttachment(a)}
+                      </div>
+                      <div className="vndAttSub">
+                        ID: <span className="vndMono">{a.id}</span>
+                        {a?.created_at ? <> · {a.created_at}</> : null}
+                      </div>
+                    </div>
+
+                    <div className="vndAttActions">
+                      <a
+                        className="vndLinkBtn"
+                        href={fileUrlFromAttachment(a)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Open
+                      </a>
+
+                      <button
+                        className="vndBtnGhostSm"
+                        onClick={() => removeAttachment(a.id)}
+                        disabled={deletingAttId === a.id}
+                      >
+                        {deletingAttId === a.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            
           </div>
-
-          <ul>
-            {attachments.map((a) => (
-              <li key={a.id} style={{ marginBottom: 6 }}>
-                <a href={a.file_url ?? a.url ?? "#"} target="_blank" rel="noreferrer">
-                  {a.filename ?? a.file ?? `attachment-${a.id}`}
-                </a>{" "}
-                <button onClick={() => removeAttachment(a.id)}>Delete</button>
-              </li>
-            ))}
-            {attachments.length === 0 && <li>No attachments</li>}
-          </ul>
-
-          <details style={{ marginTop: 12 }}>
-            <summary>Raw JSON</summary>
-            <pre style={{ background: "#f6f6f6", padding: 12 }}>{JSON.stringify(note, null, 2)}</pre>
-          </details>
-        </>
+        </div>
       )}
     </div>
   );

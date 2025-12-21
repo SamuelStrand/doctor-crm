@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { doctorApi } from "../../api/doctorApi";
+import "../../styles/DoctorSchedulePage.css";
 
 const WEEKDAYS = [
   { value: 0, label: "Mon" },
@@ -13,6 +14,16 @@ const WEEKDAYS = [
 
 function weekdayLabel(v) {
   return WEEKDAYS.find((x) => x.value === Number(v))?.label ?? String(v);
+}
+
+function parseHHMMToMinutes(hhmm) {
+  if (!hhmm) return 0;
+  const [h, m] = String(hhmm).split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function fmtHM(hhmm) {
+  return String(hhmm || "").slice(0, 5);
 }
 
 export default function DoctorSchedulePage() {
@@ -49,17 +60,22 @@ export default function DoctorSchedulePage() {
   const byDay = useMemo(() => {
     const map = new Map();
     for (let i = 0; i < 7; i++) map.set(i, []);
+
     for (const s of items) {
       const w = Number(s.weekday);
       if (!map.has(w)) map.set(w, []);
       map.get(w).push(s);
     }
+
     for (const [k, list] of map.entries()) {
       list.sort((a, b) => String(a.start_time).localeCompare(String(b.start_time)));
       map.set(k, list);
     }
+
     return map;
   }, [items]);
+
+  const totalIntervals = items.length;
 
   const resetForm = () => {
     setWeekday(0);
@@ -69,8 +85,22 @@ export default function DoctorSchedulePage() {
     setEditingId(null);
   };
 
+  const validate = () => {
+    const st = parseHHMMToMinutes(startTime);
+    const en = parseHHMMToMinutes(endTime);
+    if (en <= st) return "End time must be later than start time.";
+    if (Number(slotMinutes) < 5) return "Slot minutes must be >= 5.";
+    return null;
+  };
+
   const submit = async (e) => {
     e.preventDefault();
+    const v = validate();
+    if (v) {
+      setErr({ detail: v });
+      return;
+    }
+
     setSaving(true);
     setErr(null);
 
@@ -117,107 +147,132 @@ export default function DoctorSchedulePage() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Doctor • Schedule</h2>
+    <div className="dsPage">
+      <div className="dsTop">
+        <div className="dsBreadcrumb">Doctor</div>
 
-      <form
-        onSubmit={submit}
-        style={{
-          display: "grid",
-          gap: 10,
-          maxWidth: 520,
-          padding: 12,
-          border: "1px solid #eee",
-          borderRadius: 12,
-          marginBottom: 14,
-        }}
-      >
-        <div style={{ fontWeight: 700 }}>{editingId ? "Edit interval" : "Add interval"}</div>
+        <div className="dsHeaderRow">
+          <h1 className="dsTitle">Schedule</h1>
+          <div className="dsPill">Total: {totalIntervals}</div>
+        </div>
 
-        <label>
-          Weekday:
-          <select value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>
-            {WEEKDAYS.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        {err && (
+          <div className="dsError">
+            <pre>{JSON.stringify(err, null, 2)}</pre>
+          </div>
+        )}
+      </div>
 
-        <label>
-          Start time:
-          <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-        </label>
+      <div className="dsLayout">
+        {/* LEFT: form card */}
+        <div className="dsCard">
+          <div className="dsCardTitle">{editingId ? "Edit interval" : "Add interval"}</div>
 
-        <label>
-          End time:
-          <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-        </label>
+          <form onSubmit={submit} className="dsForm">
+            <div className="dsField">
+              <label className="dsLabel">Weekday</label>
+              <select className="dsSelect" value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>
+                {WEEKDAYS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        <label>
-          Slot minutes:
-          <input
-            type="number"
-            min="5"
-            step="5"
-            value={slotMinutes}
-            onChange={(e) => setSlotMinutes(e.target.value)}
-          />
-        </label>
+            <div className="dsGrid2">
+              <div className="dsField">
+                <label className="dsLabel">Start</label>
+                <input className="dsInput" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+              </div>
+              <div className="dsField">
+                <label className="dsLabel">End</label>
+                <input className="dsInput" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+              </div>
+            </div>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="submit" disabled={saving}>
-            {saving ? "Saving..." : editingId ? "Save" : "Create"}
-          </button>
-          {editingId && (
-            <button type="button" onClick={resetForm}>
-              Cancel
-            </button>
+            <div className="dsField">
+              <label className="dsLabel">Slot minutes</label>
+              <input
+                className="dsInput"
+                type="number"
+                min="5"
+                step="5"
+                value={slotMinutes}
+                onChange={(e) => setSlotMinutes(e.target.value)}
+                placeholder="30"
+              />
+              <div className="dsHint">Example: 10 / 15 / 20 / 30</div>
+            </div>
+
+            <div className="dsActions">
+              <button className="dsBtnPrimary" type="submit" disabled={saving}>
+                {saving ? "Saving..." : editingId ? "Save" : "Create"}
+              </button>
+              {editingId ? (
+                <button className="dsBtnGhost" type="button" onClick={resetForm} disabled={saving}>
+                  Cancel
+                </button>
+              ) : (
+                <button className="dsBtnGhost" type="button" onClick={resetForm} disabled={saving}>
+                  Reset
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {/* RIGHT: table card */}
+        <div className="dsCard dsCardWide">
+          <div className="dsCardTitle">Intervals</div>
+
+          {loading && <div className="dsLoading">Loading…</div>}
+
+          {!loading && items.length === 0 && <div className="dsEmpty">No schedule yet</div>}
+
+          {!loading && items.length > 0 && (
+            <div className="dsTableWrap">
+              <table className="dsTable">
+                <thead>
+                  <tr>
+                    <th>Weekday</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Slot</th>
+                    <th></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {Array.from(byDay.entries()).flatMap(([w, list]) =>
+                    list.map((s) => {
+                      const isEditing = editingId === s.id;
+                      return (
+                        <tr key={s.id} className={isEditing ? "isEditing" : ""}>
+                          <td>
+                            <span className="dsDayPill">{weekdayLabel(w)}</span>
+                          </td>
+                          <td>{fmtHM(s.start_time)}</td>
+                          <td>{fmtHM(s.end_time)}</td>
+                          <td>
+                            <span className="dsSlotPill">{s.slot_minutes} min</span>
+                          </td>
+                          <td className="dsRowActions">
+                            
+                            <button className="dsBtnSmallDanger" onClick={() => onDelete(s.id)}>
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-      </form>
-
-      {err && (
-        <pre style={{ background: "#eee", padding: 12, marginBottom: 12 }}>
-          {JSON.stringify(err, null, 2)}
-        </pre>
-      )}
-      {loading && <p>Loading…</p>}
-
-      {!loading && items.length === 0 && <p>No schedule yet</p>}
-
-      {!loading && items.length > 0 && (
-        <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%" }}>
-          <thead>
-            <tr>
-              <th>Weekday</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Slot</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.from(byDay.entries()).flatMap(([w, list]) =>
-              list.map((s) => (
-                <tr key={s.id}>
-                  <td>{weekdayLabel(w)}</td>
-                  <td>{String(s.start_time).slice(0, 5)}</td>
-                  <td>{String(s.end_time).slice(0, 5)}</td>
-                  <td>{s.slot_minutes}</td>
-                  <td style={{ whiteSpace: "nowrap" }}>
-                    <button onClick={() => onEdit(s)} style={{ marginRight: 8 }}>
-                      Edit
-                    </button>
-                    <button onClick={() => onDelete(s.id)}>Delete</button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      )}
+      </div>
     </div>
   );
 }

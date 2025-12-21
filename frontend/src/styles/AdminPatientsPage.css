@@ -100,7 +100,7 @@
   padding: 0 16px;
   border-radius: 14px;
   border: 0;
-  background: #2f6fed;
+  background: #8b3dff;
   color: #fff;
   font-weight: 700;
   cursor: pointer;
@@ -190,7 +190,7 @@
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: #2f6fed;
+  background: #8b3dff;
   color: #fff;
   font-weight: 800;
   display: grid;
@@ -223,7 +223,7 @@
   padding: 5px 10px;
   border-radius: 999px;
   background: #eaf1ff;
-  color: #2f6fed;
+  color: #8b3dff;
   border: 1px solid #d7e4ff;
 }
 
@@ -353,7 +353,7 @@
 .pPageNum.active {
   border-color: #cfe0ff;
   background: #eef4ff;
-  color: #2f6fed;
+  color: #8b3dff;
   font-weight: 800;
 }
 
@@ -477,7 +477,7 @@
 
 .pPrimary {
   border: 0;
-  background: #2f6fed;
+  background: #8b3dff;
   color: #fff;
   font-weight: 800;
   padding: 10px 14px;

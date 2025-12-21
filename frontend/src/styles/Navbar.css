@@ -1,0 +1,128 @@
+.nbBar, .nbBar * { box-sizing: border-box; }
+
+.nbBar{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #e6eaf2;
+}
+
+.nbInner{
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* brand */
+.nbBrand{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 1000;
+  text-decoration: none;
+  color: #0f172a;
+  padding: 8px 10px;
+  border-radius: 14px;
+}
+.nbBrand:hover{ background:#f5f7fb; }
+
+.nbBrandDot{
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #8b3dff;
+  box-shadow: 0 8px 16px rgba(139,61,255,.25);
+}
+
+/* links */
+.nbNav{
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nbLink{
+  padding: 9px 12px;
+  border-radius: 14px;
+  text-decoration: none;
+  color: #334155;
+  font-weight: 900;
+  font-size: 13px;
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+.nbLink:hover{
+  background: #f5f7fb;
+  border-color: #e6eaf2;
+}
+
+.nbLink.active{
+  background: rgba(139,61,255,.12);
+  border-color: rgba(139,61,255,.25);
+  color: #4c1d95;
+}
+
+/* right side */
+.nbRight{
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nbUser{
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 1px solid #e6eaf2;
+  background: #fff;
+}
+
+.nbUserEmail{
+  font-size: 12px;
+  font-weight: 900;
+  color: #0f172a;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nbUserRole{
+  font-size: 11px;
+  font-weight: 1000;
+  color: #64748b;
+  letter-spacing: .03em;
+}
+
+/* buttons */
+.nbBtn{
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid #e6eaf2;
+  background: #fff;
+  color: #334155;
+  font-weight: 1000;
+  cursor: pointer;
+}
+
+.nbBtn:hover{ background: #f5f7fb; }
+
+.nbBtn.danger{
+  border-color: #fecdd3;
+  color: #b91c1c;
+}
+.nbBtn.danger:hover{
+  background: #fff1f2;
+}

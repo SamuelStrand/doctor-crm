@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { adminApi } from "../../api/adminApi";
 import { unwrapPaginated } from "../../utils/paginated";
+import "../../styles/AdminAppointmentsPage.css";
 
 function useDebouncedValue(value, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -21,18 +22,78 @@ function toIsoEnd(yyyyMmDd) {
   return `${yyyyMmDd}T23:59:59`;
 }
 
+function formatDT(s) {
+  if (!s) return "—";
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return String(s);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}.${mm}.${yy} ${hh}:${mi}`;
+}
+
+function pickPatient(a) {
+  const p = a?.patient;
+  if (!p) return "—";
+  if (typeof p === "string" || typeof p === "number") return String(p);
+  return p.full_name || [p.last_name, p.first_name].filter(Boolean).join(" ") || p.id || "—";
+}
+
+function pickDoctor(a) {
+  const d = a?.doctor;
+  if (!d) return "—";
+  if (typeof d === "string" || typeof d === "number") return String(d);
+  return (
+    d?.doctor_profile?.full_name ||
+    d?.full_name ||
+    [d?.last_name, d?.first_name].filter(Boolean).join(" ") ||
+    d?.id ||
+    "—"
+  );
+}
+
+function pickService(a) {
+  const s = a?.service;
+  if (!s) return "—";
+  if (typeof s === "string" || typeof s === "number") return String(s);
+  return s?.name_ru || s?.name_en || s?.name || s?.code || s?.id || "—";
+}
+
+function pickRoom(a) {
+  const r = a?.room;
+  if (!r) return "—";
+  if (typeof r === "string" || typeof r === "number") return String(r);
+  return r?.name || r?.id || "—";
+}
+
+function statusLabel(st) {
+  if (!st) return "—";
+  const map = {
+    SCHEDULED: "Scheduled",
+    CONFIRMED: "Confirmed",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+    NO_SHOW: "No show",
+  };
+  return map[st] || st;
+}
+
 export default function AdminAppointmentsPage() {
   const [page, setPage] = useState(1);
 
   const [status, setStatus] = useState("");
-  const [dateFrom, setDateFrom] = useState(""); // YYYY-MM-DD
-  const [dateTo, setDateTo] = useState(""); // YYYY-MM-DD
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
 
   const [items, setItems] = useState([]);
   const [count, setCount] = useState(0);
+  const [pageSize, setPageSize] = useState(null);
+
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -45,22 +106,42 @@ export default function AdminAppointmentsPage() {
     return p;
   }, [page, status, dateFrom, dateTo, debouncedSearch]);
 
+  const totalPages = useMemo(() => {
+    const size = pageSize || items.length || 1;
+    return Math.max(1, Math.ceil(count / size));
+  }, [count, pageSize, items.length]);
+
+  const safeSetPage = (n) => setPage(() => Math.min(Math.max(1, n), totalPages));
+
   const load = async () => {
     setLoading(true);
     setErr(null);
     try {
       const data = await adminApi.listAppointments(params);
-      const { items, count } = unwrapPaginated(data);
-      setItems(items);
-      setCount(count);
+      const { items: gotItems, count: gotCount } = unwrapPaginated(data);
+
+      setItems(gotItems);
+      setCount(gotCount ?? gotItems.length);
+
+      if (!pageSize && gotItems.length > 0) setPageSize(gotItems.length);
     } catch (e) {
+      const detail = e?.response?.data?.detail;
+      // страховка от "Invalid page."
+      if (detail === "Invalid page.") {
+        setErr(null);
+        setPage(1);
+        return;
+      }
       setErr(e?.response?.data ?? { detail: e.message });
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, [params]); // eslint-disable-line
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line
+  }, [params]);
 
   const resetFilters = () => {
     setPage(1);
@@ -82,102 +163,183 @@ export default function AdminAppointmentsPage() {
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-        <h2 style={{ margin: 0 }}>Admin • Appointments</h2>
-        <Link to="/admin/appointments/new">+ New</Link>
-      </div>
+    <div className="aPage">
+      <div className="aTop">
+        <div className="aBreadcrumb">Записи</div>
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 12, marginBottom: 12 }}>
-        <input
-          value={search}
-          onChange={(e) => { setPage(1); setSearch(e.target.value); }}
-          placeholder="Search appointments (ids, reason, comment...)"
-          style={{ padding: 8, minWidth: 280 }}
-        />
+        <div className="aHeadRow">
+          <h1 className="aTitle">Записи</h1>
+          <Link className="aAddBtn" to="/admin/appointments/new">
+            <span className="aAddPlus">+</span>
+            Новая запись
+          </Link>
+        </div>
 
-        <label>Status:</label>
-        <select value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}>
-          <option value="">All</option>
-          <option value="SCHEDULED">SCHEDULED</option>
-          <option value="CONFIRMED">CONFIRMED</option>
-          <option value="COMPLETED">COMPLETED</option>
-          <option value="CANCELLED">CANCELLED</option>
-          <option value="NO_SHOW">NO_SHOW</option>
-        </select>
-
-        <label>From:</label>
-        <input type="date" value={dateFrom} onChange={(e) => { setPage(1); setDateFrom(e.target.value); }} />
-
-        <label>To:</label>
-        <input type="date" value={dateTo} onChange={(e) => { setPage(1); setDateTo(e.target.value); }} />
-
-        <button onClick={resetFilters}>Reset</button>
-
-        <span style={{ marginLeft: "auto", color: "#666" }}>Total: {count}</span>
-      </div>
-
-      {loading && <p>Loading…</p>}
-      {err && <pre style={{ background: "#eee", padding: 12 }}>{JSON.stringify(err, null, 2)}</pre>}
-
-      {!loading && (
-        <>
-          <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%" }}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Status</th>
-                <th>Patient</th>
-                <th>Doctor</th>
-                <th>Service</th>
-                <th>Room</th>
-                <th>Reason</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.id}</td>
-                  <td>{a.start_at ?? "-"}</td>
-                  <td>{a.end_at ?? "-"}</td>
-                  <td>{a.status ?? "-"}</td>
-
-                  {/* В админ-схеме обычно идут integer id, но если бэк вернёт объект — тоже ок */}
-                  <td>{a.patient?.full_name ?? a.patient?.id ?? a.patient ?? "-"}</td>
-                  <td>{a.doctor?.doctor_profile?.full_name ?? a.doctor?.full_name ?? a.doctor?.id ?? a.doctor ?? "-"}</td>
-                  <td>{a.service?.name ?? a.service?.id ?? a.service ?? "-"}</td>
-                  <td>{a.room?.name ?? a.room?.id ?? a.room ?? "-"}</td>
-
-                  <td style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {a.reason ?? "-"}
-                  </td>
-
-                  <td style={{ display: "flex", gap: 8 }}>
-                    <Link to={`/admin/appointments/${a.id}`}>Open</Link>
-                    <button onClick={() => remove(a.id)}>Delete</button>
-                  </td>
-                  <td>
-                    <Link to={`/admin/appointments/${a.id}/edit`}>Edit</Link>
-                    </td>
-
-                </tr>
-              ))}
-              {items.length === 0 && (
-                <tr><td colSpan="10">No appointments</td></tr>
-              )}
-            </tbody>
-          </table>
-
-          <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-            <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</button>
-            <span>Page {page}</span>
-            <button disabled={items.length === 0} onClick={() => setPage((p) => p + 1)}>Next</button>
+        <div className="aToolbar">
+          <div className="aSearch">
+            <span className="aIcon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M10.5 18.5a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M16.5 16.5 21 21"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+            <input
+              className="aSearchInput"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+              placeholder="Поиск (id, reason, comment...)"
+            />
           </div>
-        </>
-      )}
+
+          <label className="aChip">
+            <span>Статус</span>
+            <select
+              className="aSelect"
+              value={status}
+              onChange={(e) => {
+                setPage(1);
+                setStatus(e.target.value);
+              }}
+            >
+              <option value="">Все</option>
+              <option value="SCHEDULED">SCHEDULED</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="CANCELLED">CANCELLED</option>
+              <option value="NO_SHOW">NO_SHOW</option>
+            </select>
+          </label>
+
+          <label className="aChip">
+            <span>С</span>
+            <input
+              className="aDate"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setPage(1);
+                setDateFrom(e.target.value);
+              }}
+            />
+          </label>
+
+          <label className="aChip">
+            <span>По</span>
+            <input
+              className="aDate"
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setPage(1);
+                setDateTo(e.target.value);
+              }}
+            />
+          </label>
+
+          <button className="aGhostBtn" type="button" onClick={resetFilters}>
+            Сбросить
+          </button>
+        </div>
+
+        <div className="aMeta">
+          <span>Всего: {count}</span>
+          {loading && <span className="aLoading">Загрузка…</span>}
+        </div>
+
+        {err && (
+          <div className="aError">
+            <pre>{JSON.stringify(err, null, 2)}</pre>
+          </div>
+        )}
+      </div>
+
+      <div className="aTableWrap">
+        <table className="aTable">
+          <thead>
+            <tr>
+              <th className="aTh">ID</th>
+              <th className="aTh">Start</th>
+              <th className="aTh">End</th>
+              <th className="aTh">Status</th>
+              <th className="aTh">Patient</th>
+              <th className="aTh">Doctor</th>
+              <th className="aTh">Service</th>
+              <th className="aTh">Room</th>
+              <th className="aTh">Reason</th>
+              <th className="aTh aThRight">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {items.map((a) => (
+              <tr key={a.id} className="aTr">
+                <td className="aTd aMono">{a.id}</td>
+                <td className="aTd">{formatDT(a.start_at)}</td>
+                <td className="aTd">{formatDT(a.end_at)}</td>
+
+                <td className="aTd">
+                  <span className={`aBadge ${a.status || ""}`}>{statusLabel(a.status)}</span>
+                </td>
+
+                <td className="aTd">{pickPatient(a)}</td>
+                <td className="aTd">{pickDoctor(a)}</td>
+                <td className="aTd">{pickService(a)}</td>
+                <td className="aTd">{pickRoom(a)}</td>
+
+                <td className="aTd aEllipsis" title={a.reason || ""}>
+                  {a.reason ?? "—"}
+                </td>
+
+                <td className="aTd aTdRight">
+                  <div className="aActions">
+                    <Link className="aLinkBtn" to={`/admin/appointments/${a.id}`}>
+                      Open
+                    </Link>
+                    <Link className="aLinkBtn" to={`/admin/appointments/${a.id}/edit`}>
+                      Edit
+                    </Link>
+                    <button className="aDangerBtn" type="button" onClick={() => remove(a.id)}>
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+
+            {!loading && items.length === 0 && (
+              <tr>
+                <td className="aEmpty" colSpan="10">
+                  Записей нет
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="aPager">
+        <button className="aPagerBtn" disabled={page <= 1 || loading} onClick={() => safeSetPage(page - 1)}>
+          ‹ Previous
+        </button>
+        <span className="aPagerInfo">
+          {page} / {totalPages}
+        </span>
+        <button className="aPagerBtn" disabled={page >= totalPages || loading} onClick={() => safeSetPage(page + 1)}>
+          Next ›
+        </button>
+      </div>
     </div>
   );
 }

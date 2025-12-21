@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { adminApi } from "../../api/adminApi";
 import { unwrapPaginated } from "../../utils/paginated";
+import "../../styles/AdminDoctorsPage.css";
 
 function useDebouncedValue(value, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -10,6 +11,21 @@ function useDebouncedValue(value, delay = 350) {
   }, [value, delay]);
   return debounced;
 }
+
+function getInitials(fullName, firstName, lastName, email) {
+  const src =
+    (fullName && fullName.trim()) ||
+    `${lastName || ""} ${firstName || ""}`.trim() ||
+    (email || "").trim();
+
+  const parts = src.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  if (parts.length === 1 && parts[0].length >= 2) return parts[0].slice(0, 2).toUpperCase();
+  return "SP";
+}
+
+// просто чтобы UI был как на картинке (если реального расписания нет)
+const FALLBACK_TIMES = ["10:11", "11:11", "12:11", "13:11", "14:11", "15:11", "16:11"];
 
 export default function AdminDoctorsPage() {
   const [items, setItems] = useState([]);
@@ -22,8 +38,20 @@ export default function AdminDoctorsPage() {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // form
+  // UI filters
+  const [profession, setProfession] = useState("all"); // specialization
+  const [status, setStatus] = useState("all"); // all | online | offline
+  const [sort, setSort] = useState("none"); // none | name | new
+
+  const [menuOpenId, setMenuOpenId] = useState(null);
+
+  // pagination helper
+  const [pageSize, setPageSize] = useState(null);
+
+  // modal form
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState(""); // create: required, edit: optional
   const [firstName, setFirstName] = useState("");
@@ -34,21 +62,45 @@ export default function AdminDoctorsPage() {
   const [specialization, setSpecialization] = useState("");
   const [doctorPhone, setDoctorPhone] = useState("");
 
+  // ---- query params (если бэк поддерживает — будет работать; если нет — просто проигнорит)
   const queryParams = useMemo(() => {
     const p = { page };
     if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
+    if (profession !== "all") p.specialization = profession; // optional
+    if (status !== "all") p.is_active = status === "online"; // optional
+    if (sort === "name") p.ordering = "last_name"; // optional
+    if (sort === "new") p.ordering = "-id"; // optional
     return p;
-  }, [page, debouncedSearch]);
+  }, [page, debouncedSearch, profession, status, sort]);
+
+  const totalPages = useMemo(() => {
+    const size = pageSize || items.length || 1;
+    return Math.max(1, Math.ceil(count / size));
+  }, [count, pageSize, items.length]);
+
+  const safeSetPage = (n) => setPage(() => Math.min(Math.max(1, n), totalPages));
 
   const load = async () => {
     setLoading(true);
     setErr(null);
     try {
       const data = await adminApi.listDoctors(queryParams);
-      const { items, count } = unwrapPaginated(data);
-      setItems(items);
-      setCount(count);
+      const { items: gotItems, count: gotCount } = unwrapPaginated(data);
+
+      setItems(gotItems);
+      setCount(gotCount);
+
+      if (!pageSize && gotItems.length > 0) setPageSize(gotItems.length);
     } catch (e) {
+      const detail = e?.response?.data?.detail;
+
+      // если бэк ругается на страницу — не показываем красную ошибку, откатываем
+      if (detail === "Invalid page.") {
+        setErr(null);
+        setPage(1);
+        return;
+      }
+
       setErr(e?.response?.data ?? { detail: e.message });
     } finally {
       setLoading(false);
@@ -57,8 +109,54 @@ export default function AdminDoctorsPage() {
 
   useEffect(() => {
     load();
-  }, [queryParams]); // eslint-disable-line
+    // eslint-disable-next-line
+  }, [queryParams]);
 
+  // закрывать ⋮ меню по клику вне
+  useEffect(() => {
+    const onDoc = (e) => {
+      if (!e.target.closest?.(".dMenuWrap")) setMenuOpenId(null);
+    };
+    document.addEventListener("click", onDoc);
+    return () => document.removeEventListener("click", onDoc);
+  }, []);
+
+  // ---- derived lists
+  const professions = useMemo(() => {
+    const set = new Set();
+    for (const d of items) {
+      const sp = d?.doctor_profile?.specialization?.trim();
+      if (sp) set.add(sp);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [items]);
+
+  // ---- filtered/sorted view (клиентская фильтрация, даже если бэк не поддерживает params)
+  const viewItems = useMemo(() => {
+    let arr = [...items];
+
+    if (profession !== "all") {
+      arr = arr.filter((d) => (d?.doctor_profile?.specialization || "").trim() === profession);
+    }
+    if (status !== "all") {
+      const want = status === "online";
+      arr = arr.filter((d) => !!(d?.is_active ?? true) === want);
+    }
+
+    if (sort === "name") {
+      arr.sort((a, b) => {
+        const an = `${a?.doctor_profile?.full_name || a?.last_name || ""} ${a?.first_name || ""}`.trim();
+        const bn = `${b?.doctor_profile?.full_name || b?.last_name || ""} ${b?.first_name || ""}`.trim();
+        return an.localeCompare(bn);
+      });
+    } else if (sort === "new") {
+      arr.sort((a, b) => (b?.id ?? 0) - (a?.id ?? 0));
+    }
+
+    return arr;
+  }, [items, profession, status, sort]);
+
+  // ---- modal helpers
   const resetForm = () => {
     setEditingId(null);
     setEmail("");
@@ -71,6 +169,11 @@ export default function AdminDoctorsPage() {
     setDoctorPhone("");
   };
 
+  const openCreate = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
   const startEdit = (d) => {
     setEditingId(d.id);
     setEmail(d.email ?? "");
@@ -81,6 +184,7 @@ export default function AdminDoctorsPage() {
     setFullName(d.doctor_profile?.full_name ?? "");
     setSpecialization(d.doctor_profile?.specialization ?? "");
     setDoctorPhone(d.doctor_profile?.phone ?? "");
+    setIsModalOpen(true);
   };
 
   const submit = async (e) => {
@@ -113,10 +217,11 @@ export default function AdminDoctorsPage() {
         payload.password = password;
         await adminApi.createDoctor(payload);
       } else {
-        if (password) payload.password = password; // менять пароль только если ввели
+        if (password) payload.password = password;
         await adminApi.patchDoctor(editingId, payload);
       }
 
+      setIsModalOpen(false);
       resetForm();
       await load();
     } catch (e2) {
@@ -125,7 +230,9 @@ export default function AdminDoctorsPage() {
   };
 
   const remove = async (id) => {
+    setMenuOpenId(null);
     if (!confirm("Delete doctor?")) return;
+
     setErr(null);
     try {
       await adminApi.deleteDoctor(id);
@@ -135,95 +242,305 @@ export default function AdminDoctorsPage() {
     }
   };
 
+  const getCardName = (d) => {
+    const fp = d?.doctor_profile?.full_name?.trim();
+    if (fp) return fp;
+    const ln = d?.last_name || "";
+    const fn = d?.first_name || "";
+    const s = `${ln} ${fn}`.trim();
+    return s || d?.email || `#${d?.id}`;
+  };
+
+  const getPhone = (d) => d?.doctor_profile?.phone || "—";
+  const getSpec = (d) => d?.doctor_profile?.specialization || "—";
+  const getOnline = (d) => !!(d?.is_active ?? true);
+
+  // для красоты карточек: берём разные тайм-слоты (пока реальных нет)
+  const getTimes = (d) => {
+    // если у тебя когда-нибудь появится массив времен — подставишь сюда:
+    // if (Array.isArray(d.doctor_profile?.slots)) return d.doctor_profile.slots;
+    const seed = (d?.id ?? 1) % 3; // 0..2
+    const start = seed;
+    return FALLBACK_TIMES.slice(start, start + 6);
+  };
+
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Admin • Doctors</h2>
+    <div className="dPage">
+      <div className="dTop">
+        <div className="dBreadcrumb">Специалисты</div>
+        <h1 className="dTitle">Специалисты</h1>
 
-      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
-        <input
-          value={search}
-          onChange={(e) => { setPage(1); setSearch(e.target.value); }}
-          placeholder="Search doctors (email, name, specialization...)"
-          style={{ padding: 8, minWidth: 280 }}
-        />
-        <button onClick={() => { setPage(1); setSearch(""); }}>Clear search</button>
-        <span style={{ marginLeft: "auto", color: "#666" }}>Total: {count}</span>
+        <div className="dToolbar">
+          <div className="dSearch">
+            <span className="dIcon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M10.5 18.5a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+                <path
+                  d="M16.5 16.5 21 21"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+
+            <input
+              className="dSearchInput"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Поиск специалиста"
+            />
+          </div>
+
+          <select
+            className="dSelect"
+            value={profession}
+            onChange={(e) => {
+              setProfession(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="all">Все профессии</option>
+            {professions.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="dSelect"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="all">Все</option>
+            <option value="online">Онлайн</option>
+            <option value="offline">Недоступен</option>
+          </select>
+
+          <select
+            className="dSelect"
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+          >
+            <option value="none">Без сортировки</option>
+            <option value="name">По имени</option>
+            <option value="new">Сначала новые</option>
+          </select>
+
+          <button className="dAddBtn" type="button" onClick={openCreate}>
+            <span className="dAddPlus">+</span>
+            Добавить специалиста
+          </button>
+        </div>
+
+        <div className="dMeta">
+          <span>Всего: {count}</span>
+          {loading && <span className="dLoading">Загрузка…</span>}
+        </div>
+
+        {err && (
+          <div className="dError">
+            <pre>{JSON.stringify(err, null, 2)}</pre>
+          </div>
+        )}
       </div>
 
-      {err && <pre style={{ background: "#eee", padding: 12 }}>{JSON.stringify(err, null, 2)}</pre>}
-      {loading && <p>Loading…</p>}
+      <div className="dGrid">
+        {viewItems.map((d) => {
+          const name = getCardName(d);
+          const online = getOnline(d);
+          const initials = getInitials(name, d?.first_name, d?.last_name, d?.email);
 
-      <table border="1" cellPadding="8" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 16 }}>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Email</th>
-            <th>First</th>
-            <th>Last</th>
-            <th>Full name</th>
-            <th>Specialization</th>
-            <th>Active</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((d) => (
-            <tr key={d.id}>
-              <td>{d.id}</td>
-              <td>{d.email ?? "-"}</td>
-              <td>{d.first_name ?? "-"}</td>
-              <td>{d.last_name ?? "-"}</td>
-              <td>{d.doctor_profile?.full_name ?? "-"}</td>
-              <td>{d.doctor_profile?.specialization ?? "-"}</td>
-              <td>{String(d.is_active ?? true)}</td>
-              <td style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => startEdit(d)}>Edit</button>
-                <button onClick={() => remove(d.id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-          {items.length === 0 && <tr><td colSpan="8">No doctors</td></tr>}
-        </tbody>
-      </table>
+          return (
+            <div className="dCard" key={d.id}>
+              <div className="dCardTop">
+                <div className="dAvatar">{initials}</div>
 
-      <h3>{editingId ? `Edit doctor #${editingId}` : "Create doctor"}</h3>
-      <form onSubmit={submit} style={{ display: "grid", gap: 8, maxWidth: 760 }}>
-        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "1fr 1fr" }}>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email *" />
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={editingId ? "New password (optional)" : "Password *"}
-            type="password"
-          />
-        </div>
+                <div className="dMain">
+                  <div className="dNameRow">
+                    <div className="dName">{name}</div>
+                    {online ? (
+                      <span className="dStatus online">Онлайн</span>
+                    ) : (
+                      <span className="dStatus offline">Недоступен</span>
+                    )}
+                  </div>
 
-        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "1fr 1fr 1fr" }}>
-          <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" />
-          <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" />
-          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            Active
-          </label>
-        </div>
+                  <div className="dPhone">{getPhone(d)}</div>
+                </div>
 
-        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "1fr 1fr 1fr" }}>
-          <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Doctor full name" />
-          <input value={specialization} onChange={(e) => setSpecialization(e.target.value)} placeholder="Specialization" />
-          <input value={doctorPhone} onChange={(e) => setDoctorPhone(e.target.value)} placeholder="Doctor phone" />
-        </div>
+                <div className="dMenuWrap">
+                  <button
+                    className="dDots"
+                    type="button"
+                    onClick={() => setMenuOpenId((x) => (x === d.id ? null : d.id))}
+                    aria-label="Меню"
+                  >
+                    ⋮
+                  </button>
 
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="submit">{editingId ? "Save" : "Create"}</button>
-          <button type="button" onClick={resetForm}>Clear</button>
-        </div>
-      </form>
+                  {menuOpenId === d.id && (
+                    <div className="dMenu">
+                      <button type="button" onClick={() => startEdit(d)}>
+                        Редактировать
+                      </button>
+                      <button type="button" className="danger" onClick={() => remove(d.id)}>
+                        Удалить
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-      <div style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}>
-        <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</button>
-        <span>Page {page}</span>
-        <button disabled={items.length === 0} onClick={() => setPage((p) => p + 1)}>Next</button>
+              <div className="dSpec">{getSpec(d)}</div>
+
+              <div className="dSchedule">
+                <div className="dScheduleLabel">
+                  График работы <span className="dScheduleHint">—</span>
+                </div>
+
+                <div className="dSlots">
+                  {getTimes(d).map((t) => (
+                    <span key={t} className="dSlot">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {!loading && viewItems.length === 0 && (
+          <div className="dEmptyState">Специалистов нет</div>
+        )}
       </div>
+
+      <div className="dPager">
+        <button
+          className="dPagerBtn"
+          disabled={page <= 1 || loading}
+          onClick={() => safeSetPage(page - 1)}
+        >
+          ‹ Previous
+        </button>
+
+        <span className="dPagerInfo">
+          {page} / {totalPages}
+        </span>
+
+        <button
+          className="dPagerBtn"
+          disabled={page >= totalPages || loading}
+          onClick={() => safeSetPage(page + 1)}
+        >
+          Next ›
+        </button>
+      </div>
+
+      {/* MODAL */}
+      {isModalOpen && (
+        <div className="dModalOverlay" role="dialog" aria-modal="true">
+          <div className="dModal">
+            <div className="dModalHead">
+              <div className="dModalTitle">
+                {editingId ? `Редактировать специалиста #${editingId}` : "Добавить специалиста"}
+              </div>
+              <button
+                className="dModalClose"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Закрыть"
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={submit} className="dForm">
+              <div className="dFormGrid2">
+                <label className="dField">
+                  <span>Email *</span>
+                  <input value={email} onChange={(e) => setEmail(e.target.value)} />
+                </label>
+
+                <label className="dField">
+                  <span>{editingId ? "Новый пароль (опц.)" : "Пароль *"}</span>
+                  <input
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    type="password"
+                    placeholder={editingId ? "Оставь пустым, чтобы не менять" : "Введите пароль"}
+                  />
+                </label>
+              </div>
+
+              <div className="dFormGrid3">
+                <label className="dField">
+                  <span>Имя</span>
+                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                </label>
+                <label className="dField">
+                  <span>Фамилия</span>
+                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                </label>
+                <label className="dField dCheck">
+                  <span>Статус</span>
+                  <label className="dCheckRow">
+                    <input
+                      type="checkbox"
+                      checked={isActive}
+                      onChange={(e) => setIsActive(e.target.checked)}
+                    />
+                    Активен (Онлайн)
+                  </label>
+                </label>
+              </div>
+
+              <div className="dFormGrid3">
+                <label className="dField">
+                  <span>ФИО (для карточки)</span>
+                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                </label>
+                <label className="dField">
+                  <span>Профессия / специализация</span>
+                  <input value={specialization} onChange={(e) => setSpecialization(e.target.value)} />
+                </label>
+                <label className="dField">
+                  <span>Телефон</span>
+                  <input value={doctorPhone} onChange={(e) => setDoctorPhone(e.target.value)} />
+                </label>
+              </div>
+
+              <div className="dFormActions">
+                <button className="dPrimary" type="submit">
+                  {editingId ? "Сохранить" : "Создать"}
+                </button>
+                <button
+                  className="dGhost"
+                  type="button"
+                  onClick={() => {
+                    resetForm();
+                    setIsModalOpen(false);
+                  }}
+                >
+                  Отмена
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

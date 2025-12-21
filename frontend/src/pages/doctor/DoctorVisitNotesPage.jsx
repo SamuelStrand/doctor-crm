@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { doctorApi } from "../../api/doctorApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import { Link, useSearchParams } from "react-router-dom";
+import "../../styles/DoctorVisitNotesPage.css";
 
 export default function DoctorVisitNotesPage() {
   const [sp] = useSearchParams();
@@ -26,7 +27,7 @@ export default function DoctorVisitNotesPage() {
     return Number.isFinite(n) ? n : null;
   }, [appointment]);
 
-  // 1) Подтягиваем инфу по appointment (чтобы видеть patient)
+  // 1) Инфа по appointment (чтобы показать patient)
   useEffect(() => {
     let cancelled = false;
 
@@ -50,12 +51,11 @@ export default function DoctorVisitNotesPage() {
     };
   }, [appointmentIdNum]);
 
-  // 2) Грузим список заметок (опционально фильтруем по appointment)
+  // 2) Список заметок (опционально фильтр по appointment)
   const load = async () => {
     setLoading(true);
     setErr(null);
     try {
-      // если бэк поддерживает ?appointment= (у тебя в Postman оно работает)
       const data = await doctorApi.listVisitNotes({
         page,
         appointment: appointmentIdNum ?? undefined,
@@ -66,15 +66,29 @@ export default function DoctorVisitNotesPage() {
       setCount(count);
     } catch (e) {
       setErr(e?.response?.data ?? { detail: e.message });
+      setItems([]);
+      setCount(0);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    setPage(1); // если меняем appointment — возвращаемся на первую страницу
+  }, [appointmentIdNum]);
+
+  useEffect(() => {
     load();
     // eslint-disable-next-line
   }, [page, appointmentIdNum]);
+
+  const reset = () => {
+    setAppointment("");
+    setNoteText("");
+    setAppointmentInfo(null);
+    setErr(null);
+    setPage(1);
+  };
 
   // 3) Создание заметки
   const create = async (e) => {
@@ -90,15 +104,10 @@ export default function DoctorVisitNotesPage() {
       return;
     }
 
-    // если у appointment нет пациента — создавать бессмысленно (и бэк упадёт)
-    const patientFromAppointment =
-      appointmentInfo?.patient ?? appointmentInfo?.patient_id ?? null;
-
+    const patientFromAppointment = appointmentInfo?.patient ?? appointmentInfo?.patient_id ?? null;
     if (!patientFromAppointment) {
       setErr({
-        patient: [
-          "Selected appointment has no patient. Pick an appointment that has a patient.",
-        ],
+        patient: ["Selected appointment has no patient. Pick an appointment that has a patient."],
       });
       return;
     }
@@ -107,8 +116,7 @@ export default function DoctorVisitNotesPage() {
     try {
       const payload = {
         appointment: appointmentIdNum,
-        note_text: noteText, // важно: note_text :contentReference[oaicite:2]{index=2}
-        // patient НЕ шлём: в схеме он readOnly :contentReference[oaicite:3]{index=3}
+        note_text: noteText.trim(),
       };
 
       await doctorApi.createVisitNote(payload);
@@ -126,110 +134,131 @@ export default function DoctorVisitNotesPage() {
     appointmentInfo?.patient?.full_name ||
     (appointmentInfo?.patient ? `Patient #${appointmentInfo.patient}` : null);
 
+  const canNext = items.length > 0 && page * items.length < count; // грубо, но лучше чем всегда разрешать
+  const canPrev = page > 1;
+
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Doctor • Visit notes</h2>
+    <div className="vnPage">
+      <div className="vnTop">
+        <div className="vnBreadcrumb">Doctor</div>
 
-      <form
-        onSubmit={create}
-        style={{
-          display: "grid",
-          gap: 8,
-          maxWidth: 640,
-          marginBottom: 16,
-        }}
-      >
-        <input
-          value={appointment}
-          onChange={(e) => setAppointment(e.target.value)}
-          placeholder="Appointment ID (например 1)"
-        />
+        <div className="vnHeaderRow">
+          <h1 className="vnTitle">Visit notes</h1>
+          <div className="vnPill">Total: {count}</div>
+        </div>
 
-        {appointmentIdNum && (
-          <div style={{ fontSize: 14, opacity: 0.85 }}>
-            Appointment: <b>{appointmentIdNum}</b>
-            {" · "}
-            Patient: <b>{patientLabel ?? "—"}</b>
+        {err && (
+          <div className="vnError">
+            <pre>{JSON.stringify(err, null, 2)}</pre>
           </div>
         )}
+      </div>
 
-        <textarea
-          rows={4}
-          value={noteText}
-          onChange={(e) => setNoteText(e.target.value)}
-          placeholder="Note text..."
-        />
+      <div className="vnLayout">
+        {/* LEFT: create form */}
+        <div className="vnCard">
+          <div className="vnCardTitle">Create note</div>
 
-        <button type="submit" disabled={creating}>
-          {creating ? "Creating..." : "Create note"}
-        </button>
-      </form>
+          <form onSubmit={create} className="vnForm">
+            <div className="vnField">
+              <label className="vnLabel">Appointment ID</label>
+              <input
+                className="vnInput"
+                value={appointment}
+                onChange={(e) => setAppointment(e.target.value)}
+                placeholder="например 21"
+                inputMode="numeric"
+              />
+              
+            </div>
 
-      {err && (
-        <pre style={{ background: "#eee", padding: 12 }}>
-          {JSON.stringify(err, null, 2)}
-        </pre>
-      )}
-      {loading && <p>Loading…</p>}
+            {appointmentIdNum && (
+              <div className="vnInfo">
+                <div className="vnInfoRow">
+                  <span className="vnInfoK">Appointment</span>
+                  <span className="vnInfoV">#{appointmentIdNum}</span>
+                </div>
+                <div className="vnInfoRow">
+                  <span className="vnInfoK">Patient</span>
+                  <span className="vnInfoV">{patientLabel ?? "—"}</span>
+                </div>
+              </div>
+            )}
 
-      {!loading && (
-        <>
-          <table
-            border="1"
-            cellPadding="8"
-            style={{ borderCollapse: "collapse", width: "100%" }}
-          >
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Appointment</th>
-                <th>Patient</th>
-                <th>Created</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((n) => (
-                <tr key={n.id}>
-                  <td>{n.id}</td>
-                  <td>{n.appointment ?? "-"}</td>
-                  <td>{n.patient ?? "-"}</td>
-                  <td>{n.created_at ?? "-"}</td>
-                  <td>
-                    <Link to={`/doctor/visit-notes/${n.id}`}>Open</Link>
-                  </td>
-                </tr>
-              ))}
-              {items.length === 0 && (
-                <tr>
-                  <td colSpan="5">No notes</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            <div className="vnField">
+              <label className="vnLabel">Note text</label>
+              <textarea
+                className="vnTextarea"
+                rows={5}
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Напиши заметку…"
+              />
+            </div>
 
-          <div
-            style={{
-              marginTop: 12,
-              display: "flex",
-              gap: 8,
-              alignItems: "center",
-            }}
-          >
-            <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            <div className="vnActions">
+              <button className="vnBtnPrimary" type="submit" disabled={creating}>
+                {creating ? "Creating..." : "Create note"}
+              </button>
+              <button className="vnBtnGhost" type="button" onClick={reset} disabled={creating}>
+                Reset
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* RIGHT: table */}
+        <div className="vnCard vnCardWide">
+          <div className="vnCardTitle">Notes list</div>
+
+          {loading && <div className="vnLoading">Loading…</div>}
+
+          {!loading && items.length === 0 && <div className="vnEmpty">No notes</div>}
+
+          {!loading && items.length > 0 && (
+            <div className="vnTableWrap">
+              <table className="vnTable">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Appointment</th>
+                    <th>Patient</th>
+                    <th>Created</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((n) => (
+                    <tr key={n.id}>
+                      <td className="vnMono">{n.id}</td>
+                      <td className="vnMono">{n.appointment ?? "-"}</td>
+                      <td>{n.patient_name ?? n.patient?.full_name ?? n.patient ?? "-"}</td>
+                      <td className="vnDim">{n.created_at ?? "-"}</td>
+                      <td className="vnRowActions">
+                        <Link className="vnLinkBtn" to={`/doctor/visit-notes/${n.id}`}>
+                          Open
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="vnPager">
+            <button className="vnBtnGhostSm" disabled={!canPrev || loading} onClick={() => setPage((p) => p - 1)}>
               Prev
             </button>
-            <span>Page {page}</span>
-            <button
-              disabled={items.length === 0}
-              onClick={() => setPage((p) => p + 1)}
-            >
+            <div className="vnPagerMid">
+              <span className="vnPagerBadge">{page}</span>
+            </div>
+            <button className="vnBtnGhostSm" disabled={!canNext || loading} onClick={() => setPage((p) => p + 1)}>
               Next
             </button>
-            <span style={{ marginLeft: "auto" }}>Total: {count}</span>
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -5,12 +5,24 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const http = axios.create({
   baseURL: API_BASE_URL,
-  headers: { "Content-Type": "application/json" },
+    
 });
 
 http.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess();
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  const isFormData =
+    typeof FormData !== "undefined" && config.data instanceof FormData;
+
+  if (!isFormData) {
+    if (!config.headers["Content-Type"] && !config.headers["content-type"]) {
+      config.headers["Content-Type"] = "application/json";
+    }
+  } else {
+    delete config.headers["Content-Type"];
+    delete config.headers["content-type"];
+  }
   return config;
 });
 
