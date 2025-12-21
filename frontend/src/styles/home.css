@@ -1,0 +1,83 @@
+.homePage {
+  min-height: calc(100vh - 64px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(
+      1200px 600px at 50% 35%,
+      rgba(168, 85, 247, 0.10),
+      rgba(255, 255, 255, 0) 60%
+    ),
+    #fbf9ff;
+}
+
+.homeCard {
+  width: min(720px, 100%);
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 34px 34px 28px;
+  box-shadow:
+    0 18px 40px rgba(17, 24, 39, 0.10),
+    0 2px 6px rgba(17, 24, 39, 0.06);
+  border: 1px solid rgba(17, 24, 39, 0.06);
+}
+
+.homeTitle {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.homeSubtitle {
+  margin: 0 auto 18px;
+  text-align: center;
+  color: #64748b;
+  max-width: 560px;
+  line-height: 1.5;
+}
+
+.homeGrid {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.homeItem {
+  border: 1px solid #eef2ff;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.homeItemTitle {
+  margin: 0 0 6px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.homeItemText {
+  margin: 0;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.homeBadgeRow {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.homeBadge {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: rgba(168, 85, 247, 0.08);
+  color: #5b21b6;
+  font-weight: 700;
+}

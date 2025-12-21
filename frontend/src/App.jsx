@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
+import Home from "./pages/HomePage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleRoute from "./routes/RoleRoute";
 import AppLayout from "./layouts/AppLayout";
@@ -25,14 +26,6 @@ import AdminDoctorsPage from "./pages/admin/AdminDoctorsPage";
 import AdminServicesPage from "./pages/admin/AdminServicesPage";
 import AdminRoomsPage from "./pages/admin/AdminRoomsPage";
 
-function Home() {
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Home</h2>
-      <p>Use the navigation bar to open Admin/Doctor pages.</p>
-    </div>
-  );
-}
 
 export default function App() {
   return (

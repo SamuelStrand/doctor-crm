@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
+import "../styles/login.css";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -29,31 +30,43 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 420 }}>
-      <h2>Login</h2>
+    <div className="loginPage">
+      <div className="loginCard">
+        <h2 className="loginTitle">Login</h2>
 
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 10 }}>
-        <input
-          placeholder="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          placeholder="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button disabled={loading} type="submit">
-          {loading ? "..." : "Sign in"}
-        </button>
-      </form>
+        <form onSubmit={onSubmit} className="loginForm">
+          <label className="loginLabel">
+            Email
+            <input
+              className="loginInput"
+              placeholder="admin@clinic.local"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
+          </label>
 
-      {err && (
-        <pre style={{ marginTop: 12, background: "#eee", padding: 12 }}>
-          {JSON.stringify(err, null, 2)}
-        </pre>
-      )}
+          <label className="loginLabel">
+            Password
+            <input
+              className="loginInput"
+              placeholder="••••••••"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </label>
+
+          <button className="loginButton" disabled={loading} type="submit">
+            {loading ? "Signing in..." : "Sign in"}
+          </button>
+        </form>
+
+        {err && (
+          <pre className="loginError">{JSON.stringify(err, null, 2)}</pre>
+        )}
+      </div>
     </div>
   );
 }
