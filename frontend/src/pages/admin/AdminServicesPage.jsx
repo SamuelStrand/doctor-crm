@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { adminApi } from "../../api/adminApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import "../../styles/AdminServicesPage.css";
@@ -12,12 +13,12 @@ function useDebouncedValue(value, delay = 350) {
   return debounced;
 }
 
-function formatMoneyKZT(x) {
+function formatMoneyKZT(x, locale = "ru-RU") {
   if (x == null) return "—";
   const s = String(x).replace(",", ".");
   const num = Number(s);
   if (!Number.isFinite(num)) return String(x);
-  return new Intl.NumberFormat("ru-RU").format(Math.round(num)) + " ₸";
+  return new Intl.NumberFormat(locale).format(Math.round(num)) + " ₸";
 }
 
 function safeNumber(v, fallback = 0) {
@@ -29,11 +30,12 @@ function safeNumber(v, fallback = 0) {
 function normalizePrice(v) {
   const s = String(v ?? "").trim();
   if (!s) return "0.00";
-  // DRF DecimalField обычно ок с "10000" или "10000.00"
   return s.replace(",", ".");
 }
 
 export default function AdminServicesPage() {
+  const { t, i18n } = useTranslation();
+
   const [items, setItems] = useState([]);
   const [count, setCount] = useState(0);
 
@@ -49,10 +51,9 @@ export default function AdminServicesPage() {
   // modal form
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
-
   const [editingId, setEditingId] = useState(null);
 
-  // ✅ ровно поля бэка
+  // fields (backend)
   const [code, setCode] = useState("");
   const [nameEn, setNameEn] = useState("");
   const [nameRu, setNameRu] = useState("");
@@ -69,7 +70,6 @@ export default function AdminServicesPage() {
   const queryParams = useMemo(() => {
     const p = { page };
     if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
-    // ⚠️ category убрали, потому что на бэке его нет
     return p;
   }, [page, debouncedSearch]);
 
@@ -109,7 +109,7 @@ export default function AdminServicesPage() {
     // eslint-disable-next-line
   }, [queryParams]);
 
-  // закрывать ⋮ меню по клику вне
+  // close ⋮ menu on outside click
   useEffect(() => {
     const onDoc = (e) => {
       if (!e.target.closest?.(".sMenuWrap")) setMenuOpenId(null);
@@ -121,7 +121,6 @@ export default function AdminServicesPage() {
   const viewItems = useMemo(() => {
     let arr = [...items];
 
-    // если search на бэке не поддерживается — всё равно будет локальный фильтр
     const q = debouncedSearch.trim().toLowerCase();
     if (q) {
       arr = arr.filter((s) => {
@@ -159,7 +158,6 @@ export default function AdminServicesPage() {
     setNameRu(s.name_ru ?? "");
     setNameKk(s.name_kk ?? "");
 
-    // поддержим старые варианты, если где-то был description
     setDescEn(s.description_en ?? s.description ?? "");
     setDescRu(s.description_ru ?? "");
     setDescKk(s.description_kk ?? "");
@@ -176,12 +174,11 @@ export default function AdminServicesPage() {
     setErr(null);
 
     if (!code.trim() || !nameEn.trim()) {
-      setErr({ detail: "code and name_en are required" });
+      setErr({ detail: t("admin.services.validation.codeNameRequired") });
       return;
     }
 
     try {
-      // ✅ ВАЖНО: строки НЕ отправляем null (если null=False на бэке)
       const payload = {
         code: code.trim(),
 
@@ -211,7 +208,7 @@ export default function AdminServicesPage() {
 
   const remove = async (id) => {
     setMenuOpenId(null);
-    if (!confirm("Delete service?")) return;
+    if (!confirm(t("admin.services.confirmDelete"))) return;
     setErr(null);
     try {
       await adminApi.deleteService(id);
@@ -223,17 +220,18 @@ export default function AdminServicesPage() {
 
   const getTitle = (s) => (s.name_ru?.trim() ? s.name_ru : s.name_en) ?? "—";
   const getDesc = (s) => {
-    // показываем в карточке EN, если RU пустой
     const ru = (s.description_ru ?? "").toString().trim();
     const en = (s.description_en ?? s.description ?? "").toString().trim();
     return ru || en || "";
   };
 
+  const moneyLocale = i18n.language === "en" ? "en-US" : "ru-RU";
+
   return (
     <div className="sPage">
       <div className="sTop">
-        <div className="sBreadcrumb">Услуги</div>
-        <h1 className="sTitle">Услуги</h1>
+        <div className="sBreadcrumb">{t("admin.services.breadcrumb")}</div>
+        <h1 className="sTitle">{t("admin.services.title")}</h1>
 
         <div className="sToolbar">
           <div className="sSearch">
@@ -260,19 +258,21 @@ export default function AdminServicesPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Поиск услуги"
+              placeholder={t("admin.services.searchPlaceholder")}
             />
           </div>
 
           <button className="sAddBtn" type="button" onClick={openCreate}>
             <span className="sAddPlus">+</span>
-            Добавить услугу
+            {t("admin.services.add")}
           </button>
         </div>
 
         <div className="sMeta">
-          <span>Всего: {count}</span>
-          {loading && <span className="sLoading">Загрузка…</span>}
+          <span>
+            {t("admin.services.total")}: {count}
+          </span>
+          {loading && <span className="sLoading">{t("common.loading")}</span>}
         </div>
 
         {err && (
@@ -293,7 +293,7 @@ export default function AdminServicesPage() {
                 <div className="sTitleRow">
                   <div className="sCardTitle">{getTitle(s)}</div>
                   <span className={`sStatus ${active ? "on" : "off"}`}>
-                    {active ? "Активна" : "Неактивна"}
+                    {active ? t("admin.services.status.active") : t("admin.services.status.inactive")}
                   </span>
                 </div>
 
@@ -302,7 +302,7 @@ export default function AdminServicesPage() {
                     className="sDots"
                     type="button"
                     onClick={() => setMenuOpenId((x) => (x === s.id ? null : s.id))}
-                    aria-label="Меню"
+                    aria-label={t("admin.services.menu")}
                   >
                     ⋮
                   </button>
@@ -310,10 +310,10 @@ export default function AdminServicesPage() {
                   {menuOpenId === s.id && (
                     <div className="sMenu">
                       <button type="button" onClick={() => startEdit(s)}>
-                        Редактировать
+                        {t("admin.services.actions.edit")}
                       </button>
                       <button type="button" className="danger" onClick={() => remove(s.id)}>
-                        Удалить
+                        {t("admin.services.actions.delete")}
                       </button>
                     </div>
                   )}
@@ -322,16 +322,18 @@ export default function AdminServicesPage() {
 
               <div className="sKV">
                 <div className="sRow">
-                  <div className="sKey">Код:</div>
+                  <div className="sKey">{t("admin.services.kv.code")}:</div>
                   <div className="sVal">{s.code ?? "—"}</div>
                 </div>
                 <div className="sRow">
-                  <div className="sKey">Длительность:</div>
-                  <div className="sVal">{(s.duration_minutes ?? 0) + " мин"}</div>
+                  <div className="sKey">{t("admin.services.kv.duration")}:</div>
+                  <div className="sVal">
+                    {(s.duration_minutes ?? 0) + " " + t("admin.services.minutesShort")}
+                  </div>
                 </div>
                 <div className="sRow">
-                  <div className="sKey">Стоимость:</div>
-                  <div className="sVal">{formatMoneyKZT(s.price)}</div>
+                  <div className="sKey">{t("admin.services.kv.price")}:</div>
+                  <div className="sVal">{formatMoneyKZT(s.price, moneyLocale)}</div>
                 </div>
               </div>
 
@@ -340,12 +342,12 @@ export default function AdminServicesPage() {
           );
         })}
 
-        {!loading && viewItems.length === 0 && <div className="sEmptyState">Услуг нет</div>}
+        {!loading && viewItems.length === 0 && <div className="sEmptyState">{t("admin.services.empty")}</div>}
       </div>
 
       <div className="sPager">
         <button className="sPagerBtn" disabled={page <= 1 || loading} onClick={() => safeSetPage(page - 1)}>
-          ‹ Previous
+          {t("admin.services.pager.prev")}
         </button>
 
         <span className="sPagerInfo">
@@ -353,7 +355,7 @@ export default function AdminServicesPage() {
         </span>
 
         <button className="sPagerBtn" disabled={page >= totalPages || loading} onClick={() => safeSetPage(page + 1)}>
-          Next ›
+          {t("admin.services.pager.next")}
         </button>
       </div>
 
@@ -363,9 +365,16 @@ export default function AdminServicesPage() {
           <div className="sModal">
             <div className="sModalHead">
               <div className="sModalTitle">
-                {editingId ? `Редактировать услугу #${editingId}` : "Добавить услугу"}
+                {editingId
+                  ? t("admin.services.modal.editTitle", { id: editingId })
+                  : t("admin.services.modal.createTitle")}
               </div>
-              <button className="sModalClose" type="button" onClick={() => setIsModalOpen(false)}>
+              <button
+                className="sModalClose"
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                aria-label={t("admin.services.modal.close")}
+              >
                 ×
               </button>
             </div>
@@ -373,62 +382,66 @@ export default function AdminServicesPage() {
             <form onSubmit={submit} className="sForm">
               <div className="sFormGrid2">
                 <label className="sField">
-                  <span>Код *</span>
+                  <span>{t("admin.services.form.code")} *</span>
                   <input value={code} onChange={(e) => setCode(e.target.value)} />
                 </label>
                 <label className="sField sCheck">
-                  <span>Статус</span>
+                  <span>{t("admin.services.form.status")}</span>
                   <label className="sCheckRow">
                     <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-                    Активна
+                    {t("admin.services.form.active")}
                   </label>
                 </label>
               </div>
 
               <div className="sFormGrid3">
                 <label className="sField">
-                  <span>Название EN *</span>
+                  <span>{t("admin.services.form.nameEn")} *</span>
                   <input value={nameEn} onChange={(e) => setNameEn(e.target.value)} />
                 </label>
                 <label className="sField">
-                  <span>Название RU</span>
+                  <span>{t("admin.services.form.nameRu")}</span>
                   <input value={nameRu} onChange={(e) => setNameRu(e.target.value)} />
                 </label>
                 <label className="sField">
-                  <span>Название KK</span>
+                  <span>{t("admin.services.form.nameKk")}</span>
                   <input value={nameKk} onChange={(e) => setNameKk(e.target.value)} />
                 </label>
               </div>
 
               <div className="sFormGrid2">
                 <label className="sField">
-                  <span>Длительность (мин)</span>
+                  <span>{t("admin.services.form.duration")}</span>
                   <input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} />
                 </label>
                 <label className="sField">
-                  <span>Стоимость</span>
-                  <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="10000 или 10000.00" />
+                  <span>{t("admin.services.form.price")}</span>
+                  <input
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder={t("admin.services.form.pricePlaceholder")}
+                  />
                 </label>
               </div>
 
               <label className="sField">
-                <span>Описание EN</span>
+                <span>{t("admin.services.form.descEn")}</span>
                 <textarea rows={3} value={descEn} onChange={(e) => setDescEn(e.target.value)} />
               </label>
 
               <label className="sField">
-                <span>Описание RU</span>
+                <span>{t("admin.services.form.descRu")}</span>
                 <textarea rows={3} value={descRu} onChange={(e) => setDescRu(e.target.value)} />
               </label>
 
               <label className="sField">
-                <span>Описание KK</span>
+                <span>{t("admin.services.form.descKk")}</span>
                 <textarea rows={3} value={descKk} onChange={(e) => setDescKk(e.target.value)} />
               </label>
 
               <div className="sFormActions">
                 <button className="sPrimary" type="submit">
-                  {editingId ? "Сохранить" : "Создать"}
+                  {editingId ? t("common.save") : t("admin.services.modal.createBtn")}
                 </button>
                 <button
                   className="sGhost"
@@ -438,10 +451,13 @@ export default function AdminServicesPage() {
                     setIsModalOpen(false);
                   }}
                 >
-                  Отмена
+                  {t("common.cancel")}
                 </button>
               </div>
             </form>
+
+            {/* keep translator warm */}
+            <span style={{ display: "none" }}>{moneyLocale}</span>
           </div>
         </div>
       )}

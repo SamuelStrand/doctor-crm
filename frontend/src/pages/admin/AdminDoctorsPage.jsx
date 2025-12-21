@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { adminApi } from "../../api/adminApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import "../../styles/AdminDoctorsPage.css";
@@ -27,6 +28,8 @@ function getInitials(fullName, firstName, lastName, email) {
 const FALLBACK_TIMES = ["10:11", "11:11", "12:11", "13:11", "14:11", "15:11", "16:11"];
 
 export default function AdminDoctorsPage() {
+  const { t } = useTranslation();
+
   const [items, setItems] = useState([]);
   const [count, setCount] = useState(0);
 
@@ -113,7 +116,6 @@ export default function AdminDoctorsPage() {
     if (roomsLoading) return;
     setRoomsLoading(true);
     try {
-      // page_size может игнорироваться бэком — это ок
       const data = await adminApi.listRooms({ page: 1, page_size: 200 });
       const { items: gotRooms } = unwrapPaginated(data);
       setRooms(Array.isArray(gotRooms) ? gotRooms : []);
@@ -130,12 +132,11 @@ export default function AdminDoctorsPage() {
   }, [queryParams]);
 
   useEffect(() => {
-    // подгрузим комнаты заранее, чтобы селект был готов
     loadRooms();
     // eslint-disable-next-line
   }, []);
 
-  // закрывать ⋮ меню по клику вне
+  // close ⋮ menu on outside click
   useEffect(() => {
     const onDoc = (e) => {
       if (!e.target.closest?.(".dMenuWrap")) setMenuOpenId(null);
@@ -205,7 +206,7 @@ export default function AdminDoctorsPage() {
     if (typeof roomVal === "string") return roomVal;
     if (typeof roomVal === "object") return roomVal.id != null ? String(roomVal.id) : "";
     return "";
-    };
+  };
 
   const startEdit = (d) => {
     setEditingId(d.id);
@@ -244,24 +245,18 @@ export default function AdminDoctorsPage() {
         is_active: !!isActive,
       };
 
-      // ✅ doctor_profile собираем только если есть что отправлять
-      // и НЕ отправляем full_name, если он пустой (чтобы не упасть на required)
+      // ✅ doctor_profile: send only meaningful fields
       const dp = {};
 
       const fn = fullName.trim();
-      if (fn) dp.full_name = fn; // только если НЕ пустой
+      if (fn) dp.full_name = fn;
 
-      // эти поля обычно blank=True, поэтому "" ок
       dp.specialization = specialization.trim() || "";
       dp.phone = doctorPhone.trim() || "";
 
-      // room отправляем только если выбрали
       const rid = roomId.trim();
       if (rid) dp.room = Number(rid);
 
-      // если dp пустой (кроме specialization/phone мы их всегда ставим),
-      // но тут specialization/phone мы ставим всегда — значит dp не пустой.
-      // Если хочешь НЕ трогать профиль вообще, когда всё пусто — сделаем проверку:
       const dpHasMeaningful =
         (typeof dp.full_name === "string" && dp.full_name.trim()) ||
         (typeof dp.specialization === "string" && dp.specialization.trim()) ||
@@ -269,7 +264,6 @@ export default function AdminDoctorsPage() {
         dp.room != null;
 
       if (dpHasMeaningful) payload.doctor_profile = dp;
-      // иначе вообще не шлем doctor_profile
 
       if (!editingId) {
         payload.password = password;
@@ -289,7 +283,7 @@ export default function AdminDoctorsPage() {
 
   const remove = async (id) => {
     setMenuOpenId(null);
-    if (!confirm("Delete doctor?")) return;
+    if (!confirm(t("admin.doctors.confirmDelete"))) return;
 
     setErr(null);
     try {
@@ -319,11 +313,22 @@ export default function AdminDoctorsPage() {
     return FALLBACK_TIMES.slice(start, start + 6);
   };
 
+  const statusLabel = (st) => {
+    const map = {
+      SCHEDULED: t("admin.status.scheduled"),
+      CONFIRMED: t("admin.status.confirmed"),
+      COMPLETED: t("admin.status.completed"),
+      CANCELLED: t("admin.status.cancelled"),
+      NO_SHOW: t("admin.status.noShow"),
+    };
+    return map[st] || st || "—";
+  };
+
   return (
     <div className="dPage">
       <div className="dTop">
-        <div className="dBreadcrumb">Специалисты</div>
-        <h1 className="dTitle">Специалисты</h1>
+        <div className="dBreadcrumb">{t("admin.doctors.breadcrumb")}</div>
+        <h1 className="dTitle">{t("admin.doctors.title")}</h1>
 
         <div className="dToolbar">
           <div className="dSearch">
@@ -350,7 +355,7 @@ export default function AdminDoctorsPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              placeholder="Поиск специалиста"
+              placeholder={t("admin.doctors.searchPlaceholder")}
             />
           </div>
 
@@ -362,7 +367,7 @@ export default function AdminDoctorsPage() {
               setPage(1);
             }}
           >
-            <option value="all">Все профессии</option>
+            <option value="all">{t("admin.doctors.filters.professionAll")}</option>
             {professions.map((p) => (
               <option key={p} value={p}>
                 {p}
@@ -378,26 +383,28 @@ export default function AdminDoctorsPage() {
               setPage(1);
             }}
           >
-            <option value="all">Все</option>
-            <option value="online">Онлайн</option>
-            <option value="offline">Недоступен</option>
+            <option value="all">{t("admin.doctors.filters.statusAll")}</option>
+            <option value="online">{t("admin.doctors.filters.statusOnline")}</option>
+            <option value="offline">{t("admin.doctors.filters.statusOffline")}</option>
           </select>
 
           <select className="dSelect" value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="none">Без сортировки</option>
-            <option value="name">По имени</option>
-            <option value="new">Сначала новые</option>
+            <option value="none">{t("admin.doctors.sort.none")}</option>
+            <option value="name">{t("admin.doctors.sort.name")}</option>
+            <option value="new">{t("admin.doctors.sort.new")}</option>
           </select>
 
           <button className="dAddBtn" type="button" onClick={openCreate}>
             <span className="dAddPlus">+</span>
-            Добавить специалиста
+            {t("admin.doctors.add")}
           </button>
         </div>
 
         <div className="dMeta">
-          <span>Всего: {count}</span>
-          {loading && <span className="dLoading">Загрузка…</span>}
+          <span>
+            {t("admin.doctors.total")}: {count}
+          </span>
+          {loading && <span className="dLoading">{t("common.loading")}</span>}
         </div>
 
         {err && (
@@ -422,9 +429,9 @@ export default function AdminDoctorsPage() {
                   <div className="dNameRow">
                     <div className="dName">{name}</div>
                     {online ? (
-                      <span className="dStatus online">Онлайн</span>
+                      <span className="dStatus online">{t("admin.doctors.status.online")}</span>
                     ) : (
-                      <span className="dStatus offline">Недоступен</span>
+                      <span className="dStatus offline">{t("admin.doctors.status.offline")}</span>
                     )}
                   </div>
 
@@ -436,7 +443,7 @@ export default function AdminDoctorsPage() {
                     className="dDots"
                     type="button"
                     onClick={() => setMenuOpenId((x) => (x === d.id ? null : d.id))}
-                    aria-label="Меню"
+                    aria-label={t("admin.doctors.menu")}
                   >
                     ⋮
                   </button>
@@ -444,10 +451,10 @@ export default function AdminDoctorsPage() {
                   {menuOpenId === d.id && (
                     <div className="dMenu">
                       <button type="button" onClick={() => startEdit(d)}>
-                        Редактировать
+                        {t("admin.doctors.actions.edit")}
                       </button>
                       <button type="button" className="danger" onClick={() => remove(d.id)}>
-                        Удалить
+                        {t("admin.doctors.actions.delete")}
                       </button>
                     </div>
                   )}
@@ -458,13 +465,13 @@ export default function AdminDoctorsPage() {
 
               <div className="dSchedule">
                 <div className="dScheduleLabel">
-                  График работы <span className="dScheduleHint">—</span>
+                  {t("admin.doctors.workSchedule")} <span className="dScheduleHint">—</span>
                 </div>
 
                 <div className="dSlots">
-                  {getTimes(d).map((t) => (
-                    <span key={t} className="dSlot">
-                      {t}
+                  {getTimes(d).map((tm) => (
+                    <span key={tm} className="dSlot">
+                      {tm}
                     </span>
                   ))}
                 </div>
@@ -473,12 +480,12 @@ export default function AdminDoctorsPage() {
           );
         })}
 
-        {!loading && viewItems.length === 0 && <div className="dEmptyState">Специалистов нет</div>}
+        {!loading && viewItems.length === 0 && <div className="dEmptyState">{t("admin.doctors.empty")}</div>}
       </div>
 
       <div className="dPager">
         <button className="dPagerBtn" disabled={page <= 1 || loading} onClick={() => safeSetPage(page - 1)}>
-          ‹ Previous
+          {t("admin.doctors.pager.prev")}
         </button>
 
         <span className="dPagerInfo">
@@ -486,7 +493,7 @@ export default function AdminDoctorsPage() {
         </span>
 
         <button className="dPagerBtn" disabled={page >= totalPages || loading} onClick={() => safeSetPage(page + 1)}>
-          Next ›
+          {t("admin.doctors.pager.next")}
         </button>
       </div>
 
@@ -496,12 +503,14 @@ export default function AdminDoctorsPage() {
           <div className="dModal">
             <div className="dModalHead">
               <div className="dModalTitle">
-                {editingId ? `Редактировать специалиста #${editingId}` : "Добавить специалиста"}
+                {editingId
+                  ? t("admin.doctors.modal.editTitle", { id: editingId })
+                  : t("admin.doctors.modal.createTitle")}
               </div>
               <button
                 className="dModalClose"
                 onClick={() => setIsModalOpen(false)}
-                aria-label="Закрыть"
+                aria-label={t("admin.doctors.modal.close")}
                 type="button"
               >
                 ×
@@ -511,53 +520,61 @@ export default function AdminDoctorsPage() {
             <form onSubmit={submit} className="dForm">
               <div className="dFormGrid2">
                 <label className="dField">
-                  <span>Email *</span>
+                  <span>{t("admin.doctors.form.email")} *</span>
                   <input value={email} onChange={(e) => setEmail(e.target.value)} />
                 </label>
 
                 <label className="dField">
-                  <span>{editingId ? "Новый пароль (опц.)" : "Пароль *"}</span>
+                  <span>
+                    {editingId ? t("admin.doctors.form.passwordOptional") : t("admin.doctors.form.passwordRequired")}
+                  </span>
                   <input
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
-                    placeholder={editingId ? "Оставь пустым, чтобы не менять" : "Введите пароль"}
+                    placeholder={
+                      editingId
+                        ? t("admin.doctors.form.passwordKeepEmpty")
+                        : t("admin.doctors.form.passwordPlaceholder")
+                    }
                   />
                 </label>
               </div>
 
               <div className="dFormGrid3">
                 <label className="dField">
-                  <span>Имя</span>
+                  <span>{t("admin.doctors.form.firstName")}</span>
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                 </label>
                 <label className="dField">
-                  <span>Фамилия</span>
+                  <span>{t("admin.doctors.form.lastName")}</span>
                   <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
                 </label>
                 <label className="dField dCheck">
-                  <span>Статус</span>
+                  <span>{t("admin.doctors.form.status")}</span>
                   <label className="dCheckRow">
                     <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-                    Активен (Онлайн)
+                    {t("admin.doctors.form.active")}
                   </label>
                 </label>
               </div>
 
               <div className="dFormGrid2">
                 <label className="dField">
-                  <span>ФИО (обязательное на бэке)</span>
+                  <span>{t("admin.doctors.form.fullNameRequired")}</span>
                   <input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Если оставишь пустым — full_name НЕ отправим"
+                    placeholder={t("admin.doctors.form.fullNamePlaceholder")}
                   />
                 </label>
 
                 <label className="dField">
-                  <span>Комната</span>
+                  <span>{t("admin.doctors.form.room")}</span>
                   <select value={roomId} onChange={(e) => setRoomId(e.target.value)}>
-                    <option value="">{roomsLoading ? "Загрузка..." : "— не выбрано —"}</option>
+                    <option value="">
+                      {roomsLoading ? t("common.loading") : t("admin.doctors.form.roomNotSelected")}
+                    </option>
                     {rooms.map((r) => (
                       <option key={r.id} value={String(r.id)}>
                         {r.name ?? `Room #${r.id}`}
@@ -569,18 +586,18 @@ export default function AdminDoctorsPage() {
 
               <div className="dFormGrid2">
                 <label className="dField">
-                  <span>Профессия / специализация</span>
+                  <span>{t("admin.doctors.form.specialization")}</span>
                   <input value={specialization} onChange={(e) => setSpecialization(e.target.value)} />
                 </label>
                 <label className="dField">
-                  <span>Телефон</span>
+                  <span>{t("admin.doctors.form.phone")}</span>
                   <input value={doctorPhone} onChange={(e) => setDoctorPhone(e.target.value)} />
                 </label>
               </div>
 
               <div className="dFormActions">
                 <button className="dPrimary" type="submit">
-                  {editingId ? "Сохранить" : "Создать"}
+                  {editingId ? t("common.save") : t("admin.doctors.modal.createBtn")}
                 </button>
                 <button
                   className="dGhost"
@@ -590,10 +607,13 @@ export default function AdminDoctorsPage() {
                     setIsModalOpen(false);
                   }}
                 >
-                  Отмена
+                  {t("common.cancel")}
                 </button>
               </div>
             </form>
+
+            {/* (optional) keep statusLabel here if you ever show appointment statuses in this page */}
+            <span style={{ display: "none" }}>{statusLabel("SCHEDULED")}</span>
           </div>
         </div>
       )}

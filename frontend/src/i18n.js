@@ -169,6 +169,78 @@ const resources = {
           },
         },
 
+        // ✅ AdminDoctorsPage
+        doctors: {
+          breadcrumb: "Специалисты",
+          title: "Специалисты",
+          add: "Добавить специалиста",
+          total: "Всего",
+          searchPlaceholder: "Поиск специалиста",
+          confirmDelete: "Удалить специалиста?",
+          menu: "Меню",
+
+          filters: {
+            professionAll: "Все профессии",
+            statusAll: "Все",
+            statusOnline: "Онлайн",
+            statusOffline: "Недоступен",
+          },
+
+          sort: {
+            none: "Без сортировки",
+            name: "По имени",
+            new: "Сначала новые",
+          },
+
+          status: {
+            online: "Онлайн",
+            offline: "Недоступен",
+          },
+
+          workSchedule: "График работы",
+
+          actions: {
+            edit: "Редактировать",
+            delete: "Удалить",
+          },
+
+          empty: "Специалистов нет",
+
+          pager: {
+            prev: "‹ Назад",
+            next: "Вперёд ›",
+          },
+
+          modal: {
+            createTitle: "Добавить специалиста",
+            editTitle: "Редактировать специалиста #{{id}}",
+            close: "Закрыть",
+            createBtn: "Создать",
+          },
+
+          form: {
+            email: "Email",
+            passwordRequired: "Пароль *",
+            passwordOptional: "Новый пароль (опц.)",
+            passwordKeepEmpty: "Оставь пустым, чтобы не менять",
+            passwordPlaceholder: "Введите пароль",
+
+            firstName: "Имя",
+            lastName: "Фамилия",
+            status: "Статус",
+            active: "Активен (Онлайн)",
+
+            fullNameRequired: "ФИО (обязательное на бэке)",
+            fullNamePlaceholder: " ",
+
+            room: "Комната",
+            roomNotSelected: "— не выбрано —",
+
+            specialization: "Профессия / специализация",
+            phone: "Телефон",
+          },
+        },
+
         // ✅ AdminAppointmentFormPage (create/edit)
         apptForm: {
           titleNew: "Новая запись",
@@ -200,10 +272,12 @@ const resources = {
           },
 
           hints: {
-            patientsNotLoaded: "Список пациентов не загрузился — введи ID вручную.",
+            patientsNotLoaded:
+              "Список пациентов не загрузился — введи ID вручную.",
             doctorsNotLoaded: "Список врачей не загрузился — введи ID вручную.",
             servicesNotLoaded: "Список услуг не загрузился — введи ID вручную.",
-            roomsNotLoaded: "Список кабинетов не загрузился — введи ID вручную.",
+            roomsNotLoaded:
+              "Список кабинетов не загрузился — введи ID вручную.",
             localTime: "Локальное время компьютера.",
             endAfterStart: "End должен быть позже Start.",
           },
@@ -243,6 +317,137 @@ const resources = {
             room: "Кабинет",
             reason: "Причина",
             comment: "Комментарий",
+          },
+        },
+
+        // ✅ AdminServicesPage
+        services: {
+          breadcrumb: "Услуги",
+          title: "Услуги",
+          add: "Добавить услугу",
+          total: "Всего",
+          searchPlaceholder: "Поиск услуги",
+          confirmDelete: "Удалить услугу?",
+          menu: "Меню",
+
+          minutesShort: "мин",
+
+          status: {
+            active: "Активна",
+            inactive: "Неактивна",
+          },
+
+          actions: {
+            edit: "Редактировать",
+            delete: "Удалить",
+          },
+
+          kv: {
+            code: "Код",
+            duration: "Длительность",
+            price: "Стоимость",
+          },
+
+          empty: "Услуг нет",
+
+          pager: {
+            prev: "‹ Назад",
+            next: "Вперёд ›",
+          },
+
+          modal: {
+            createTitle: "Добавить услугу",
+            editTitle: "Редактировать услугу #{{id}}",
+            close: "Закрыть",
+            createBtn: "Создать",
+          },
+
+          form: {
+            code: "Код",
+            status: "Статус",
+            active: "Активна",
+
+            nameEn: "Название EN",
+            nameRu: "Название RU",
+            nameKk: "Название KK",
+
+            duration: "Длительность (мин)",
+            price: "Стоимость",
+            pricePlaceholder: "10000 или 10000.00",
+
+            descEn: "Описание EN",
+            descRu: "Описание RU",
+            descKk: "Описание KK",
+          },
+
+          validation: {
+            codeNameRequired: "code and name_en are required",
+          },
+        },
+
+        // ✅ AdminRoomsPage (NEW)
+        rooms: {
+          breadcrumb: "Кабинеты",
+          title: "Кабинеты",
+          searchPlaceholder: "Поиск кабинета",
+          add: "Добавить кабинет",
+          total: "Всего",
+          confirmDelete: "Удалить кабинет?",
+
+          none: "—",
+          floorLabel: "Этаж {{floor}}",
+
+          appointment: "Запись",
+
+          legend: {
+            busy: "Занято",
+            free: "Свободно",
+          },
+
+          controls: {
+            date: "Дата",
+            from: "С",
+            to: "До",
+            step: "Шаг",
+          },
+
+          stepOptions: {
+            min15: "15 мин",
+            min30: "30 мин",
+            min60: "60 мин",
+          },
+
+          table: {
+            room: "Кабинет",
+          },
+
+          actions: {
+            edit: "Редактировать",
+            delete: "Удалить",
+          },
+
+          empty: "Кабинетов нет",
+
+          pager: {
+            prev: "‹ Назад",
+            next: "Вперёд ›",
+          },
+
+          modal: {
+            createTitle: "Добавить кабинет",
+            editTitle: "Редактировать кабинет #{{id}}",
+            close: "Закрыть",
+            createBtn: "Создать",
+          },
+
+          form: {
+            name: "Название",
+            floor: "Этаж",
+            comment: "Комментарий",
+          },
+
+          validation: {
+            nameRequired: "name is required",
           },
         },
 
@@ -387,6 +592,209 @@ const resources = {
           },
           footerTip:
             "Tip: use the search input inside each section (Patients / Doctors / Appointments) to quickly find records.",
+        },
+
+        // ✅ AdminDoctorsPage
+        doctors: {
+          breadcrumb: "Doctors",
+          title: "Doctors",
+          add: "Add doctor",
+          total: "Total",
+          searchPlaceholder: "Search doctor",
+          confirmDelete: "Delete doctor?",
+          menu: "Menu",
+
+          filters: {
+            professionAll: "All professions",
+            statusAll: "All",
+            statusOnline: "Online",
+            statusOffline: "Offline",
+          },
+
+          sort: {
+            none: "No sorting",
+            name: "By name",
+            new: "Newest first",
+          },
+
+          status: {
+            online: "Online",
+            offline: "Offline",
+          },
+
+          workSchedule: "Working hours",
+
+          actions: {
+            edit: "Edit",
+            delete: "Delete",
+          },
+
+          empty: "No doctors",
+
+          pager: {
+            prev: "‹ Previous",
+            next: "Next ›",
+          },
+
+          modal: {
+            createTitle: "Add doctor",
+            editTitle: "Edit doctor #{{id}}",
+            close: "Close",
+            createBtn: "Create",
+          },
+
+          form: {
+            email: "Email",
+            passwordRequired: "Password *",
+            passwordOptional: "New password (optional)",
+            passwordKeepEmpty: "Leave empty to keep unchanged",
+            passwordPlaceholder: "Enter password",
+
+            firstName: "First name",
+            lastName: "Last name",
+            status: "Status",
+            active: "Active (Online)",
+
+            fullNameRequired: "Full name (required on backend)",
+            fullNamePlaceholder: " ",
+
+            room: "Room",
+            roomNotSelected: "— not selected —",
+
+            specialization: "Profession / specialization",
+            phone: "Phone",
+          },
+        },
+
+        // ✅ AdminServicesPage
+        services: {
+          breadcrumb: "Services",
+          title: "Services",
+          add: "Add service",
+          total: "Total",
+          searchPlaceholder: "Search service",
+          confirmDelete: "Delete service?",
+          menu: "Menu",
+
+          minutesShort: "min",
+
+          status: {
+            active: "Active",
+            inactive: "Inactive",
+          },
+
+          actions: {
+            edit: "Edit",
+            delete: "Delete",
+          },
+
+          kv: {
+            code: "Code",
+            duration: "Duration",
+            price: "Price",
+          },
+
+          empty: "No services",
+
+          pager: {
+            prev: "‹ Previous",
+            next: "Next ›",
+          },
+
+          modal: {
+            createTitle: "Add service",
+            editTitle: "Edit service #{{id}}",
+            close: "Close",
+            createBtn: "Create",
+          },
+
+          form: {
+            code: "Code",
+            status: "Status",
+            active: "Active",
+
+            nameEn: "Name EN",
+            nameRu: "Name RU",
+            nameKk: "Name KK",
+
+            duration: "Duration (min)",
+            price: "Price",
+            pricePlaceholder: "10000 or 10000.00",
+
+            descEn: "Description EN",
+            descRu: "Description RU",
+            descKk: "Description KK",
+          },
+
+          validation: {
+            codeNameRequired: "code and name_en are required",
+          },
+        },
+
+        // ✅ AdminRoomsPage (NEW)
+        rooms: {
+          breadcrumb: "Rooms",
+          title: "Rooms",
+          searchPlaceholder: "Search room",
+          add: "Add room",
+          total: "Total",
+          confirmDelete: "Delete room?",
+
+          none: "—",
+          floorLabel: "Floor {{floor}}",
+
+          appointment: "Appointment",
+
+          legend: {
+            busy: "Busy",
+            free: "Free",
+          },
+
+          controls: {
+            date: "Date",
+            from: "From",
+            to: "To",
+            step: "Step",
+          },
+
+          stepOptions: {
+            min15: "15 min",
+            min30: "30 min",
+            min60: "60 min",
+          },
+
+          table: {
+            room: "Room",
+          },
+
+          actions: {
+            edit: "Edit",
+            delete: "Delete",
+          },
+
+          empty: "No rooms",
+
+          pager: {
+            prev: "‹ Previous",
+            next: "Next ›",
+          },
+
+          modal: {
+            createTitle: "Add room",
+            editTitle: "Edit room #{{id}}",
+            close: "Close",
+            createBtn: "Create",
+          },
+
+          form: {
+            name: "Name",
+            floor: "Floor",
+            comment: "Comment",
+          },
+
+          validation: {
+            nameRequired: "name is required",
+          },
         },
 
         // ✅ AdminSchedulePage

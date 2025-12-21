@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { adminApi } from "../../api/adminApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import "../../styles/AdminRoomsPage.css";
@@ -29,7 +30,6 @@ function sameYMD(dateObj, ymdStr) {
 }
 
 function getRoomIdFromAppt(a) {
-  // поддержка разных форм
   if (a?.room?.id != null) return a.room.id;
   if (a?.room_id != null) return a.room_id;
   if (typeof a?.room === "number") return a.room;
@@ -46,12 +46,7 @@ function getPatientLabel(a) {
   const p = a?.patient;
   if (!p) return "";
   if (typeof p === "string") return p;
-  return (
-    p?.full_name ||
-    [p?.last_name, p?.first_name].filter(Boolean).join(" ") ||
-    p?.name ||
-    ""
-  );
+  return p?.full_name || [p?.last_name, p?.first_name].filter(Boolean).join(" ") || p?.name || "";
 }
 function getDoctorLabel(a) {
   const d = a?.doctor;
@@ -66,20 +61,13 @@ function getDoctorLabel(a) {
   );
 }
 
-function getApptTitle(a) {
-  const service = getServiceLabel(a) || "Запись";
-  const patient = getPatientLabel(a);
-  const doctor = getDoctorLabel(a);
-  const who = [patient, doctor].filter(Boolean).join(", ");
-  return who ? `${service} • ${who}` : service;
-}
-
 function overlaps(slotStart, slotEnd, apStart, apEnd) {
-  // пересечение [slotStart,slotEnd) и [apStart,apEnd)
   return slotStart < apEnd && slotEnd > apStart;
 }
 
 export default function AdminRoomsPage() {
+  const { t } = useTranslation();
+
   // rooms
   const [rooms, setRooms] = useState([]);
   const [roomsCount, setRoomsCount] = useState(0);
@@ -112,7 +100,6 @@ export default function AdminRoomsPage() {
 
   const roomsQuery = useMemo(() => {
     const p = { page: roomsPage };
-    // если бэк умеет search — будет ок, если нет — отфильтруем локально
     if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
     return p;
   }, [roomsPage, debouncedSearch]);
@@ -122,8 +109,7 @@ export default function AdminRoomsPage() {
     return Math.max(1, Math.ceil(roomsCount / size));
   }, [roomsCount, roomsPageSize, rooms.length]);
 
-  const safeSetRoomsPage = (n) =>
-    setRoomsPage(() => Math.min(Math.max(1, n), roomsTotalPages));
+  const safeSetRoomsPage = (n) => setRoomsPage(() => Math.min(Math.max(1, n), roomsTotalPages));
 
   const loadRooms = async () => {
     setLoadingRooms(true);
@@ -148,10 +134,6 @@ export default function AdminRoomsPage() {
     }
   };
 
-  // ВАЖНО: listAppointments у тебя есть. Мы попробуем:
-  // 1) передать date_from/date_to (если бэк поддерживает — супер)
-  // 2) если бэк игнорит — всё равно отфильтруем по day на фронте
-  // + подтянем несколько страниц (до 10), чтобы не упереться в page=1
   const loadAppointmentsForDay = async () => {
     setLoadingAppts(true);
     setErr(null);
@@ -166,10 +148,8 @@ export default function AdminRoomsPage() {
       for (let p = 1; p <= MAX_PAGES; p++) {
         const data = await adminApi.listAppointments({
           page: p,
-          // если у тебя на бэке есть фильтры — они начнут работать без изменений
           date_from: dayStart.toISOString(),
           date_to: dayEnd.toISOString(),
-          // иногда DRF разрешает page_size
           page_size: 200,
         });
 
@@ -178,11 +158,9 @@ export default function AdminRoomsPage() {
 
         collected.push(...items);
 
-        // эвристика: если пришло меньше page_size — значит страниц больше нет
         if (items.length < 200) break;
       }
 
-      // финальная фильтрация по выбранной дате (на случай если фильтры не поддерживаются бэком)
       const filtered = collected.filter((a) => {
         const start = parseISO(a.start_at);
         return start && sameYMD(start, day);
@@ -217,7 +195,6 @@ export default function AdminRoomsPage() {
   }, [rooms, debouncedSearch]);
 
   const slots = useMemo(() => {
-    // строим даты-слоты в выбранный day
     const [fh, fm] = timeFrom.split(":").map(Number);
     const [th, tm] = timeTo.split(":").map(Number);
 
@@ -228,15 +205,14 @@ export default function AdminRoomsPage() {
     end.setHours(th, tm, 0, 0);
 
     const arr = [];
-    for (let t = start.getTime(); t < end.getTime(); t += slotMinutes * 60 * 1000) {
-      arr.push(new Date(t));
+    for (let tms = start.getTime(); tms < end.getTime(); tms += slotMinutes * 60 * 1000) {
+      arr.push(new Date(tms));
     }
     return arr;
   }, [day, timeFrom, timeTo, slotMinutes]);
 
-  // appts grouped by roomId
   const apptsByRoom = useMemo(() => {
-    const m = new Map(); // roomId -> array appointments
+    const m = new Map();
     for (const a of appts) {
       const roomId = getRoomIdFromAppt(a);
       if (!roomId) continue;
@@ -272,7 +248,7 @@ export default function AdminRoomsPage() {
     setErr(null);
 
     if (!name.trim()) {
-      setErr({ detail: "name is required" });
+      setErr({ detail: t("admin.rooms.validation.nameRequired") });
       return;
     }
 
@@ -295,7 +271,7 @@ export default function AdminRoomsPage() {
   };
 
   const remove = async (id) => {
-    if (!confirm("Delete room?")) return;
+    if (!confirm(t("admin.rooms.confirmDelete"))) return;
     setErr(null);
     try {
       await adminApi.deleteRoom(id);
@@ -307,11 +283,19 @@ export default function AdminRoomsPage() {
 
   const isLoading = loadingRooms || loadingAppts;
 
+  const getApptTitle = (a) => {
+    const service = getServiceLabel(a) || t("admin.rooms.appointment");
+    const patient = getPatientLabel(a);
+    const doctor = getDoctorLabel(a);
+    const who = [patient, doctor].filter(Boolean).join(", ");
+    return who ? `${service} • ${who}` : service;
+  };
+
   return (
     <div className="rPage">
       <div className="rTop">
-        <div className="rBreadcrumb">Кабинеты</div>
-        <h1 className="rTitle">Кабинеты</h1>
+        <div className="rBreadcrumb">{t("admin.rooms.breadcrumb")}</div>
+        <h1 className="rTitle">{t("admin.rooms.title")}</h1>
 
         <div className="rToolbar">
           <div className="rSearch">
@@ -337,46 +321,48 @@ export default function AdminRoomsPage() {
                 setSearch(e.target.value);
                 setRoomsPage(1);
               }}
-              placeholder="Поиск кабинета"
+              placeholder={t("admin.rooms.searchPlaceholder")}
             />
           </div>
 
           <label className="rChip">
-            <span>Дата</span>
+            <span>{t("admin.rooms.controls.date")}</span>
             <input className="rDate" type="date" value={day} onChange={(e) => setDay(e.target.value)} />
           </label>
 
           <label className="rChip">
-            <span>С</span>
+            <span>{t("admin.rooms.controls.from")}</span>
             <input className="rTime" type="time" value={timeFrom} onChange={(e) => setTimeFrom(e.target.value)} />
           </label>
 
           <label className="rChip">
-            <span>До</span>
+            <span>{t("admin.rooms.controls.to")}</span>
             <input className="rTime" type="time" value={timeTo} onChange={(e) => setTimeTo(e.target.value)} />
           </label>
 
           <label className="rChip">
-            <span>Шаг</span>
+            <span>{t("admin.rooms.controls.step")}</span>
             <select className="rSelectSmall" value={slotMinutes} onChange={(e) => setSlotMinutes(Number(e.target.value))}>
-              <option value={15}>15 мин</option>
-              <option value={30}>30 мин</option>
-              <option value={60}>60 мин</option>
+              <option value={15}>{t("admin.rooms.stepOptions.min15")}</option>
+              <option value={30}>{t("admin.rooms.stepOptions.min30")}</option>
+              <option value={60}>{t("admin.rooms.stepOptions.min60")}</option>
             </select>
           </label>
 
           <button className="rAddBtn" type="button" onClick={openCreate}>
             <span className="rAddPlus">+</span>
-            Добавить кабинет
+            {t("admin.rooms.add")}
           </button>
         </div>
 
         <div className="rMeta">
-          <span>Всего: {roomsCount}</span>
-          {isLoading && <span className="rLoading">Загрузка…</span>}
+          <span>
+            {t("admin.rooms.total")}: {roomsCount}
+          </span>
+          {isLoading && <span className="rLoading">{t("common.loading")}</span>}
           <span className="rLegend">
-            <span className="rLegendDot busy" /> Занято
-            <span className="rLegendDot free" /> Свободно
+            <span className="rLegendDot busy" /> {t("admin.rooms.legend.busy")}
+            <span className="rLegendDot free" /> {t("admin.rooms.legend.free")}
           </span>
         </div>
 
@@ -391,10 +377,10 @@ export default function AdminRoomsPage() {
         <table className="rTable">
           <thead>
             <tr>
-              <th className="rThSticky">Кабинет</th>
-              {slots.map((t) => (
-                <th key={t.toISOString()} className="rTh">
-                  {formatHHMM(t)}
+              <th className="rThSticky">{t("admin.rooms.table.room")}</th>
+              {slots.map((tms) => (
+                <th key={tms.toISOString()} className="rTh">
+                  {formatHHMM(tms)}
                 </th>
               ))}
             </tr>
@@ -410,17 +396,21 @@ export default function AdminRoomsPage() {
                     <div className="rRoomCell">
                       <div className="rRoomName">{room.name}</div>
                       <div className="rRoomMeta">
-                        <span>{room.floor != null ? `Этаж ${room.floor}` : "—"}</span>
+                        <span>
+                          {room.floor != null
+                            ? t("admin.rooms.floorLabel", { floor: room.floor })
+                            : t("admin.rooms.none")}
+                        </span>
                         {room.comment ? <span className="rDot">•</span> : null}
                         {room.comment ? <span className="rRoomComment">{room.comment}</span> : null}
                       </div>
 
                       <div className="rRoomActions">
                         <button className="rMiniBtn" type="button" onClick={() => startEdit(room)}>
-                          Edit
+                          {t("admin.rooms.actions.edit")}
                         </button>
                         <button className="rMiniBtn danger" type="button" onClick={() => remove(room.id)}>
-                          Delete
+                          {t("admin.rooms.actions.delete")}
                         </button>
                       </div>
                     </div>
@@ -429,11 +419,11 @@ export default function AdminRoomsPage() {
                   {slots.map((slotStart) => {
                     const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60 * 1000);
 
-                    // ищем запись, которая пересекает слот
                     let hit = null;
                     for (const a of roomAppts) {
                       const aStart = parseISO(a.start_at);
-                      const aEnd = parseISO(a.end_at) || (aStart ? new Date(aStart.getTime() + 30 * 60 * 1000) : null);
+                      const aEnd =
+                        parseISO(a.end_at) || (aStart ? new Date(aStart.getTime() + 30 * 60 * 1000) : null);
                       if (!aStart || !aEnd) continue;
                       if (overlaps(slotStart, slotEnd, aStart, aEnd)) {
                         hit = a;
@@ -445,10 +435,8 @@ export default function AdminRoomsPage() {
                       <td key={`${room.id}_${slotStart.toISOString()}`} className="rTd">
                         {hit ? (
                           <div className="rBusy" title={getApptTitle(hit)}>
-                            <div className="rBusyTitle">{getServiceLabel(hit) || "Запись"}</div>
-                            <div className="rBusySub">
-                              {getPatientLabel(hit) || getDoctorLabel(hit) || ""}
-                            </div>
+                            <div className="rBusyTitle">{getServiceLabel(hit) || t("admin.rooms.appointment")}</div>
+                            <div className="rBusySub">{getPatientLabel(hit) || getDoctorLabel(hit) || ""}</div>
                           </div>
                         ) : (
                           <div className="rFree" />
@@ -463,7 +451,7 @@ export default function AdminRoomsPage() {
             {!loadingRooms && viewRooms.length === 0 && (
               <tr>
                 <td className="rEmptyRow" colSpan={1 + slots.length}>
-                  Кабинетов нет
+                  {t("admin.rooms.empty")}
                 </td>
               </tr>
             )}
@@ -472,8 +460,12 @@ export default function AdminRoomsPage() {
       </div>
 
       <div className="rPager">
-        <button className="rPagerBtn" disabled={roomsPage <= 1 || loadingRooms} onClick={() => safeSetRoomsPage(roomsPage - 1)}>
-          ‹ Previous
+        <button
+          className="rPagerBtn"
+          disabled={roomsPage <= 1 || loadingRooms}
+          onClick={() => safeSetRoomsPage(roomsPage - 1)}
+        >
+          {t("admin.rooms.pager.prev")}
         </button>
         <span className="rPagerInfo">
           {roomsPage} / {roomsTotalPages}
@@ -483,7 +475,7 @@ export default function AdminRoomsPage() {
           disabled={roomsPage >= roomsTotalPages || loadingRooms}
           onClick={() => safeSetRoomsPage(roomsPage + 1)}
         >
-          Next ›
+          {t("admin.rooms.pager.next")}
         </button>
       </div>
 
@@ -491,7 +483,9 @@ export default function AdminRoomsPage() {
         <div className="rModalOverlay" role="dialog" aria-modal="true">
           <div className="rModal">
             <div className="rModalHead">
-              <div className="rModalTitle">{editingId ? `Редактировать кабинет #${editingId}` : "Добавить кабинет"}</div>
+              <div className="rModalTitle">
+                {editingId ? t("admin.rooms.modal.editTitle", { id: editingId }) : t("admin.rooms.modal.createTitle")}
+              </div>
               <button className="rModalClose" type="button" onClick={() => setIsModalOpen(false)}>
                 ×
               </button>
@@ -500,23 +494,23 @@ export default function AdminRoomsPage() {
             <form onSubmit={submit} className="rForm">
               <div className="rFormGrid2">
                 <label className="rField">
-                  <span>Название *</span>
+                  <span>{t("admin.rooms.form.name")} *</span>
                   <input value={name} onChange={(e) => setName(e.target.value)} />
                 </label>
                 <label className="rField">
-                  <span>Этаж</span>
+                  <span>{t("admin.rooms.form.floor")}</span>
                   <input type="number" value={floor} onChange={(e) => setFloor(e.target.value)} />
                 </label>
               </div>
 
               <label className="rField">
-                <span>Комментарий</span>
+                <span>{t("admin.rooms.form.comment")}</span>
                 <input value={comment} onChange={(e) => setComment(e.target.value)} />
               </label>
 
               <div className="rFormActions">
                 <button className="rPrimary" type="submit">
-                  {editingId ? "Сохранить" : "Создать"}
+                  {editingId ? t("common.save") : t("admin.rooms.modal.createBtn")}
                 </button>
                 <button
                   className="rGhost"
@@ -526,7 +520,7 @@ export default function AdminRoomsPage() {
                     setIsModalOpen(false);
                   }}
                 >
-                  Отмена
+                  {t("common.cancel")}
                 </button>
               </div>
             </form>
