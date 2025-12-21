@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { adminApi } from "../../api/adminApi";
 import "../../styles/AdminAppointmentDetailPage.css";
+import { useTranslation } from "react-i18next";
 
 function formatDT(s) {
   if (!s) return "—";
@@ -15,19 +16,10 @@ function formatDT(s) {
   return `${dd}.${mm}.${yy} ${hh}:${mi}`;
 }
 
-function statusLabel(st) {
-  if (!st) return "—";
-  const map = {
-    SCHEDULED: "Scheduled",
-    CONFIRMED: "Confirmed",
-    COMPLETED: "Completed",
-    CANCELLED: "Cancelled",
-    NO_SHOW: "No show",
-  };
-  return map[st] || st;
-}
-
 export default function AdminAppointmentDetailPage() {
+  const { t, i18n } = useTranslation();
+  const lang = (i18n.language || "ru").slice(0, 2);
+
   const { id } = useParams();
   const nav = useNavigate();
 
@@ -35,6 +27,18 @@ export default function AdminAppointmentDetailPage() {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const statusLabel = (st) => {
+    if (!st) return "—";
+    const map = {
+      SCHEDULED: t("admin.appointments.status.scheduled"),
+      CONFIRMED: t("admin.appointments.status.confirmed"),
+      COMPLETED: t("admin.appointments.status.completed"),
+      CANCELLED: t("admin.appointments.status.cancelled"),
+      NO_SHOW: t("admin.appointments.status.noShow"),
+    };
+    return map[st] || st;
+  };
 
   const load = async () => {
     setLoading(true);
@@ -55,7 +59,7 @@ export default function AdminAppointmentDetailPage() {
   }, [id]);
 
   const del = async () => {
-    if (!confirm("Delete this appointment?")) return;
+    if (!confirm(t("admin.apptDetail.confirmDelete"))) return;
     setDeleting(true);
     setErr(null);
     try {
@@ -88,8 +92,15 @@ export default function AdminAppointmentDetailPage() {
           [doctor?.last_name, doctor?.first_name].filter(Boolean).join(" ")
         : doctor;
 
-    const serviceName =
-      typeof service === "object" ? service?.name_ru || service?.name_en || service?.name || service?.code : service;
+    let serviceName = "—";
+    if (typeof service === "object") {
+      if (lang === "ru") serviceName = service?.name_ru || service?.name_en || service?.name_kk || service?.name || service?.code;
+      else if (lang === "en") serviceName = service?.name_en || service?.name_ru || service?.name_kk || service?.name || service?.code;
+      else if (lang === "kk") serviceName = service?.name_kk || service?.name_ru || service?.name_en || service?.name || service?.code;
+      else serviceName = service?.name_ru || service?.name_en || service?.name_kk || service?.name || service?.code;
+    } else {
+      serviceName = service ?? "—";
+    }
 
     const roomName = typeof room === "object" ? room?.name || room?.id : room;
 
@@ -104,32 +115,32 @@ export default function AdminAppointmentDetailPage() {
       reason: a.reason ?? "—",
       comment: a.comment ?? a.notes ?? "—",
     };
-  }, [a]);
+  }, [a, lang]);
 
   return (
     <div className="adPage">
       <div className="adTop">
         <Link className="adBack" to="/admin/appointments">
-          ← Назад к списку
+          ← {t("admin.apptDetail.backToList")}
         </Link>
 
         <div className="adHeadRow">
           <div>
-            <div className="adBreadcrumb">Записи</div>
-            <h1 className="adTitle">Appointment #{id}</h1>
+            <div className="adBreadcrumb">{t("admin.appointments.breadcrumb")}</div>
+            <h1 className="adTitle">{t("admin.apptDetail.title", { id })}</h1>
           </div>
 
           <div className="adHeadActions">
             <Link className="adBtn" to={`/admin/appointments/${id}/edit`}>
-              Edit
+              {t("admin.apptDetail.actions.edit")}
             </Link>
             <button className="adBtn danger" onClick={del} disabled={deleting}>
-              {deleting ? "Deleting..." : "Delete"}
+              {deleting ? t("admin.apptDetail.actions.deleting") : t("admin.apptDetail.actions.delete")}
             </button>
           </div>
         </div>
 
-        {loading && <div className="adLoading">Загрузка…</div>}
+        {loading && <div className="adLoading">{t("common.loading")}</div>}
 
         {err && (
           <div className="adError">
@@ -141,55 +152,55 @@ export default function AdminAppointmentDetailPage() {
       {a && summary && (
         <div className="adGridSingle">
           <div className="adCard">
-            <div className="adCardTitle">Summary</div>
+            <div className="adCardTitle">{t("admin.apptDetail.summaryTitle")}</div>
 
             <div className="adSummary">
               <div className="adRow">
-                <div className="adLabel">Status</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.status")}</div>
                 <div className="adValue">
                   <span className={`adBadge ${summary.status || ""}`}>{statusLabel(summary.status)}</span>
                 </div>
               </div>
 
               <div className="adRow">
-                <div className="adLabel">Start</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.start")}</div>
                 <div className="adValue">{summary.start}</div>
               </div>
 
               <div className="adRow">
-                <div className="adLabel">End</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.end")}</div>
                 <div className="adValue">{summary.end}</div>
               </div>
 
               <div className="adRow">
-                <div className="adLabel">Patient</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.patient")}</div>
                 <div className="adValue">{summary.patient}</div>
               </div>
 
               <div className="adRow">
-                <div className="adLabel">Doctor</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.doctor")}</div>
                 <div className="adValue">{summary.doctor}</div>
               </div>
 
               <div className="adRow">
-                <div className="adLabel">Service</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.service")}</div>
                 <div className="adValue">{summary.service}</div>
               </div>
 
               <div className="adRow">
-                <div className="adLabel">Room</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.room")}</div>
                 <div className="adValue">{summary.room}</div>
               </div>
 
               <div className="adRow">
-                <div className="adLabel">Reason</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.reason")}</div>
                 <div className="adValue adEllipsis" title={summary.reason}>
                   {summary.reason}
                 </div>
               </div>
 
               <div className="adRow adRowTall">
-                <div className="adLabel">Comment</div>
+                <div className="adLabel">{t("admin.apptDetail.labels.comment")}</div>
                 <div className="adValue adMulti">{summary.comment}</div>
               </div>
             </div>

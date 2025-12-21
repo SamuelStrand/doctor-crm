@@ -34,8 +34,7 @@ export const doctorApi = {
     const items = res?.results ?? res;
     return items?.[0] ?? null;
   },
-  updateAppointment: async (id, payload) =>
-  (await http.patch(`/doctor/appointments/${id}/`, payload)).data,
+  
   listPatients: async (params = {}) =>
   (await http.get("/doctor/patients/", { params })).data,
 

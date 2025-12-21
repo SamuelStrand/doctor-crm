@@ -24,7 +24,6 @@ function getInitials(fullName, firstName, lastName, email) {
   return "SP";
 }
 
-// просто чтобы UI был как на картинке (если реального расписания нет)
 const FALLBACK_TIMES = ["10:11", "11:11", "12:11", "13:11", "14:11", "15:11", "16:11"];
 
 export default function AdminDoctorsPage() {
@@ -48,6 +47,10 @@ export default function AdminDoctorsPage() {
   // pagination helper
   const [pageSize, setPageSize] = useState(null);
 
+  // rooms (for doctor_profile.room)
+  const [rooms, setRooms] = useState([]);
+  const [roomsLoading, setRoomsLoading] = useState(false);
+
   // modal form
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -61,15 +64,16 @@ export default function AdminDoctorsPage() {
   const [fullName, setFullName] = useState("");
   const [specialization, setSpecialization] = useState("");
   const [doctorPhone, setDoctorPhone] = useState("");
+  const [roomId, setRoomId] = useState(""); // string for <select>, send number if set
 
-  // ---- query params (если бэк поддерживает — будет работать; если нет — просто проигнорит)
+  // ---- query params
   const queryParams = useMemo(() => {
     const p = { page };
     if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
-    if (profession !== "all") p.specialization = profession; // optional
-    if (status !== "all") p.is_active = status === "online"; // optional
-    if (sort === "name") p.ordering = "last_name"; // optional
-    if (sort === "new") p.ordering = "-id"; // optional
+    if (profession !== "all") p.specialization = profession;
+    if (status !== "all") p.is_active = status === "online";
+    if (sort === "name") p.ordering = "last_name";
+    if (sort === "new") p.ordering = "-id";
     return p;
   }, [page, debouncedSearch, profession, status, sort]);
 
@@ -93,17 +97,30 @@ export default function AdminDoctorsPage() {
       if (!pageSize && gotItems.length > 0) setPageSize(gotItems.length);
     } catch (e) {
       const detail = e?.response?.data?.detail;
-
-      // если бэк ругается на страницу — не показываем красную ошибку, откатываем
       if (detail === "Invalid page.") {
         setErr(null);
         setPage(1);
         return;
       }
-
       setErr(e?.response?.data ?? { detail: e.message });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // load rooms once (best effort)
+  const loadRooms = async () => {
+    if (roomsLoading) return;
+    setRoomsLoading(true);
+    try {
+      // page_size может игнорироваться бэком — это ок
+      const data = await adminApi.listRooms({ page: 1, page_size: 200 });
+      const { items: gotRooms } = unwrapPaginated(data);
+      setRooms(Array.isArray(gotRooms) ? gotRooms : []);
+    } catch {
+      setRooms([]);
+    } finally {
+      setRoomsLoading(false);
     }
   };
 
@@ -111,6 +128,12 @@ export default function AdminDoctorsPage() {
     load();
     // eslint-disable-next-line
   }, [queryParams]);
+
+  useEffect(() => {
+    // подгрузим комнаты заранее, чтобы селект был готов
+    loadRooms();
+    // eslint-disable-next-line
+  }, []);
 
   // закрывать ⋮ меню по клику вне
   useEffect(() => {
@@ -131,7 +154,7 @@ export default function AdminDoctorsPage() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [items]);
 
-  // ---- filtered/sorted view (клиентская фильтрация, даже если бэк не поддерживает params)
+  // ---- filtered/sorted view
   const viewItems = useMemo(() => {
     let arr = [...items];
 
@@ -164,9 +187,11 @@ export default function AdminDoctorsPage() {
     setFirstName("");
     setLastName("");
     setIsActive(true);
+
     setFullName("");
     setSpecialization("");
     setDoctorPhone("");
+    setRoomId("");
   };
 
   const openCreate = () => {
@@ -174,16 +199,27 @@ export default function AdminDoctorsPage() {
     setIsModalOpen(true);
   };
 
+  const extractRoomId = (roomVal) => {
+    if (roomVal == null) return "";
+    if (typeof roomVal === "number") return String(roomVal);
+    if (typeof roomVal === "string") return roomVal;
+    if (typeof roomVal === "object") return roomVal.id != null ? String(roomVal.id) : "";
+    return "";
+    };
+
   const startEdit = (d) => {
     setEditingId(d.id);
     setEmail(d.email ?? "");
-    setPassword(""); // не показываем текущий пароль
+    setPassword("");
     setFirstName(d.first_name ?? "");
     setLastName(d.last_name ?? "");
     setIsActive(d.is_active ?? true);
+
     setFullName(d.doctor_profile?.full_name ?? "");
     setSpecialization(d.doctor_profile?.specialization ?? "");
     setDoctorPhone(d.doctor_profile?.phone ?? "");
+    setRoomId(extractRoomId(d.doctor_profile?.room));
+
     setIsModalOpen(true);
   };
 
@@ -206,12 +242,34 @@ export default function AdminDoctorsPage() {
         first_name: firstName.trim() || "",
         last_name: lastName.trim() || "",
         is_active: !!isActive,
-        doctor_profile: {
-          full_name: fullName.trim() || "",
-          specialization: specialization.trim() || "",
-          phone: doctorPhone.trim() || "",
-        },
       };
+
+      // ✅ doctor_profile собираем только если есть что отправлять
+      // и НЕ отправляем full_name, если он пустой (чтобы не упасть на required)
+      const dp = {};
+
+      const fn = fullName.trim();
+      if (fn) dp.full_name = fn; // только если НЕ пустой
+
+      // эти поля обычно blank=True, поэтому "" ок
+      dp.specialization = specialization.trim() || "";
+      dp.phone = doctorPhone.trim() || "";
+
+      // room отправляем только если выбрали
+      const rid = roomId.trim();
+      if (rid) dp.room = Number(rid);
+
+      // если dp пустой (кроме specialization/phone мы их всегда ставим),
+      // но тут specialization/phone мы ставим всегда — значит dp не пустой.
+      // Если хочешь НЕ трогать профиль вообще, когда всё пусто — сделаем проверку:
+      const dpHasMeaningful =
+        (typeof dp.full_name === "string" && dp.full_name.trim()) ||
+        (typeof dp.specialization === "string" && dp.specialization.trim()) ||
+        (typeof dp.phone === "string" && dp.phone.trim()) ||
+        dp.room != null;
+
+      if (dpHasMeaningful) payload.doctor_profile = dp;
+      // иначе вообще не шлем doctor_profile
 
       if (!editingId) {
         payload.password = password;
@@ -255,11 +313,8 @@ export default function AdminDoctorsPage() {
   const getSpec = (d) => d?.doctor_profile?.specialization || "—";
   const getOnline = (d) => !!(d?.is_active ?? true);
 
-  // для красоты карточек: берём разные тайм-слоты (пока реальных нет)
   const getTimes = (d) => {
-    // если у тебя когда-нибудь появится массив времен — подставишь сюда:
-    // if (Array.isArray(d.doctor_profile?.slots)) return d.doctor_profile.slots;
-    const seed = (d?.id ?? 1) % 3; // 0..2
+    const seed = (d?.id ?? 1) % 3;
     const start = seed;
     return FALLBACK_TIMES.slice(start, start + 6);
   };
@@ -328,11 +383,7 @@ export default function AdminDoctorsPage() {
             <option value="offline">Недоступен</option>
           </select>
 
-          <select
-            className="dSelect"
-            value={sort}
-            onChange={(e) => setSort(e.target.value)}
-          >
+          <select className="dSelect" value={sort} onChange={(e) => setSort(e.target.value)}>
             <option value="none">Без сортировки</option>
             <option value="name">По имени</option>
             <option value="new">Сначала новые</option>
@@ -422,17 +473,11 @@ export default function AdminDoctorsPage() {
           );
         })}
 
-        {!loading && viewItems.length === 0 && (
-          <div className="dEmptyState">Специалистов нет</div>
-        )}
+        {!loading && viewItems.length === 0 && <div className="dEmptyState">Специалистов нет</div>}
       </div>
 
       <div className="dPager">
-        <button
-          className="dPagerBtn"
-          disabled={page <= 1 || loading}
-          onClick={() => safeSetPage(page - 1)}
-        >
+        <button className="dPagerBtn" disabled={page <= 1 || loading} onClick={() => safeSetPage(page - 1)}>
           ‹ Previous
         </button>
 
@@ -440,11 +485,7 @@ export default function AdminDoctorsPage() {
           {page} / {totalPages}
         </span>
 
-        <button
-          className="dPagerBtn"
-          disabled={page >= totalPages || loading}
-          onClick={() => safeSetPage(page + 1)}
-        >
+        <button className="dPagerBtn" disabled={page >= totalPages || loading} onClick={() => safeSetPage(page + 1)}>
           Next ›
         </button>
       </div>
@@ -497,21 +538,36 @@ export default function AdminDoctorsPage() {
                 <label className="dField dCheck">
                   <span>Статус</span>
                   <label className="dCheckRow">
-                    <input
-                      type="checkbox"
-                      checked={isActive}
-                      onChange={(e) => setIsActive(e.target.checked)}
-                    />
+                    <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
                     Активен (Онлайн)
                   </label>
                 </label>
               </div>
 
-              <div className="dFormGrid3">
+              <div className="dFormGrid2">
                 <label className="dField">
-                  <span>ФИО (для карточки)</span>
-                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                  <span>ФИО (обязательное на бэке)</span>
+                  <input
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Если оставишь пустым — full_name НЕ отправим"
+                  />
                 </label>
+
+                <label className="dField">
+                  <span>Комната</span>
+                  <select value={roomId} onChange={(e) => setRoomId(e.target.value)}>
+                    <option value="">{roomsLoading ? "Загрузка..." : "— не выбрано —"}</option>
+                    {rooms.map((r) => (
+                      <option key={r.id} value={String(r.id)}>
+                        {r.name ?? `Room #${r.id}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="dFormGrid2">
                 <label className="dField">
                   <span>Профессия / специализация</span>
                   <input value={specialization} onChange={(e) => setSpecialization(e.target.value)} />

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { adminApi } from "../../api/adminApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import "../../styles/AdminPatientsPage.css";
+import { useTranslation } from "react-i18next";
 
 function useDebouncedValue(value, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -19,14 +20,13 @@ function getInitials(first = "", last = "") {
   return res || "CL";
 }
 
-// если позже появится поле последней записи — подставишь сюда
 function getLastVisitLabel(p) {
-  // пример:
-  // if (p.last_appointment_date) return p.last_appointment_date;
   return null;
 }
 
 export default function AdminPatientsPage() {
+  const { t } = useTranslation();
+
   const [items, setItems] = useState([]);
   const [count, setCount] = useState(0);
 
@@ -37,21 +37,18 @@ export default function AdminPatientsPage() {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // UI
-  const [sort, setSort] = useState("none"); // none | name | created
+  const [sort, setSort] = useState("none");
   const [menuOpenId, setMenuOpenId] = useState(null);
 
-  // pagination helper
   const [pageSize, setPageSize] = useState(null);
 
-  // form (modal)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [middleName, setMiddleName] = useState("");
-  const [birthDate, setBirthDate] = useState(""); // YYYY-MM-DD
-  const [gender, setGender] = useState("U"); // M/F/O/U
+  const [birthDate, setBirthDate] = useState("");
+  const [gender, setGender] = useState("U");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
@@ -60,14 +57,12 @@ export default function AdminPatientsPage() {
   const queryParams = useMemo(() => {
     const p = { page };
     if (debouncedSearch.trim()) p.search = debouncedSearch.trim();
-    // если есть сортировка на бэке — раскомментируй и подстрой
-    // if (sort !== "none") p.ordering = sort === "name" ? "last_name" : "-created_at";
     return p;
-  }, [page, debouncedSearch, sort]);
+  }, [page, debouncedSearch]);
 
   const totalPages = useMemo(() => {
     const size = pageSize || items.length || 1;
-    return Math.max(1, Math.ceil(count / size));
+    return Math.max(1, Math.ceil((count || 0) / size));
   }, [count, pageSize, items.length]);
 
   const safeSetPage = (n) => {
@@ -83,20 +78,16 @@ export default function AdminPatientsPage() {
       const { items: gotItems, count: gotCount } = unwrapPaginated(data);
 
       setItems(gotItems);
-      setCount(gotCount);
+      setCount(gotCount ?? gotItems.length);
 
-      // запоминаем размер страницы (обычно постоянный)
       if (!pageSize && gotItems.length > 0) setPageSize(gotItems.length);
     } catch (e) {
       const detail = e?.response?.data?.detail;
-
-      // если бэк говорит что такой страницы нет — молча откатываем
       if (detail === "Invalid page.") {
         setErr(null);
         setPage(1);
         return;
       }
-
       setErr(e?.response?.data ?? { detail: e.message });
     } finally {
       setLoading(false);
@@ -145,21 +136,22 @@ export default function AdminPatientsPage() {
     setErr(null);
 
     if (!firstName.trim() || !lastName.trim()) {
-      setErr({ detail: "first_name and last_name are required" });
+      setErr({ detail: t("admin.patients.errors.firstLastRequired") });
       return;
     }
 
     try {
+      // blank=True, null=False -> отправляем "" (НЕ null)
       const payload = {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
-        middle_name: middleName.trim() || null,
+        middle_name: middleName.trim() || "",
         birth_date: birthDate || null,
         gender: gender || "U",
-        phone: phone.trim() || null,
-        email: email.trim() || null,
-        address: address.trim() || null,
-        comment: comment || null,
+        phone: phone.trim() || "",
+        email: email.trim() || "",
+        address: address.trim() || "",
+        comment: comment.trim() || "",
       };
 
       if (!editingId) await adminApi.createPatient(payload);
@@ -175,7 +167,7 @@ export default function AdminPatientsPage() {
 
   const remove = async (id) => {
     setMenuOpenId(null);
-    if (!confirm("Delete patient?")) return;
+    if (!confirm(t("admin.patients.confirmDelete"))) return;
 
     setErr(null);
     try {
@@ -186,7 +178,6 @@ export default function AdminPatientsPage() {
     }
   };
 
-  // закрывать меню по клику вне
   useEffect(() => {
     const onDoc = (e) => {
       if (!e.target.closest?.(".menuWrap")) setMenuOpenId(null);
@@ -195,17 +186,45 @@ export default function AdminPatientsPage() {
     return () => document.removeEventListener("click", onDoc);
   }, []);
 
-  // если поиск поменялся — всегда на первую страницу
   useEffect(() => {
     setPage(1);
     // eslint-disable-next-line
   }, [debouncedSearch]);
 
+  const sortedItems = useMemo(() => {
+    const arr = [...items];
+    if (sort === "name") {
+      arr.sort((a, b) => {
+        const an = `${a?.last_name || ""} ${a?.first_name || ""}`.trim().toLowerCase();
+        const bn = `${b?.last_name || ""} ${b?.first_name || ""}`.trim().toLowerCase();
+        return an.localeCompare(bn);
+      });
+    } else if (sort === "created") {
+      // если created_at нет — просто по id (новые больше)
+      arr.sort((a, b) => {
+        const ac = a?.created_at ? new Date(a.created_at).getTime() : Number(a?.id || 0);
+        const bc = b?.created_at ? new Date(b.created_at).getTime() : Number(b?.id || 0);
+        return bc - ac;
+      });
+    }
+    return arr;
+  }, [items, sort]);
+
+  const genderLabel = (g) => {
+    const map = {
+      U: t("admin.patients.gender.u"),
+      M: t("admin.patients.gender.m"),
+      F: t("admin.patients.gender.f"),
+      O: t("admin.patients.gender.o"),
+    };
+    return map[g] || g;
+  };
+
   return (
     <div className="pPage">
       <div className="pTop">
-        <div className="pBreadcrumb">Клиенты</div>
-        <h1 className="pTitle">Клиенты</h1>
+        <div className="pBreadcrumb">{t("admin.patients.breadcrumb")}</div>
+        <h1 className="pTitle">{t("admin.patients.title")}</h1>
 
         <div className="pToolbar">
           <div className="pSearch">
@@ -229,25 +248,27 @@ export default function AdminPatientsPage() {
               className="pSearchInput"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск клиента"
+              placeholder={t("admin.patients.searchPlaceholder")}
             />
           </div>
 
           <select className="pSelect" value={sort} onChange={(e) => setSort(e.target.value)}>
-            <option value="none">Без сортировки</option>
-            <option value="name">По имени</option>
-            <option value="created">Сначала новые</option>
+            <option value="none">{t("admin.patients.sort.none")}</option>
+            <option value="name">{t("admin.patients.sort.name")}</option>
+            <option value="created">{t("admin.patients.sort.created")}</option>
           </select>
 
           <button className="pAddBtn" type="button" onClick={openCreate}>
             <span className="pAddPlus">+</span>
-            Добавить клиента
+            {t("admin.patients.add")}
           </button>
         </div>
 
         <div className="pMeta">
-          <span>Всего: {count}</span>
-          {loading && <span className="pLoading">Загрузка…</span>}
+          <span>
+            {t("admin.patients.total")}: {count}
+          </span>
+          {loading && <span className="pLoading">{t("common.loading")}</span>}
         </div>
 
         {err && (
@@ -258,10 +279,9 @@ export default function AdminPatientsPage() {
       </div>
 
       <div className="pGrid">
-        {items.map((p) => {
+        {sortedItems.map((p) => {
           const initials = getInitials(p.first_name, p.last_name);
-          const fullName =
-            `${p.last_name ?? ""} ${p.first_name ?? ""}`.trim() || `#${p.id}`;
+          const fullName = `${p.last_name ?? ""} ${p.first_name ?? ""}`.trim() || `#${p.id}`;
           const lastVisit = getLastVisitLabel(p);
 
           return (
@@ -272,7 +292,7 @@ export default function AdminPatientsPage() {
                 <div className="pCardMain">
                   <div className="pNameRow">
                     <div className="pName">{fullName}</div>
-                    <span className="pBadge">Новый</span>
+                    <span className="pBadge">{t("admin.patients.badgeNew")}</span>
                   </div>
                   <div className="pPhone">{p.phone ? p.phone : "—"}</div>
                 </div>
@@ -282,7 +302,7 @@ export default function AdminPatientsPage() {
                     className="pDots"
                     type="button"
                     onClick={() => setMenuOpenId((x) => (x === p.id ? null : p.id))}
-                    aria-label="Меню"
+                    aria-label={t("admin.patients.menu")}
                   >
                     ⋮
                   </button>
@@ -290,10 +310,10 @@ export default function AdminPatientsPage() {
                   {menuOpenId === p.id && (
                     <div className="pMenu">
                       <button type="button" onClick={() => startEdit(p)}>
-                        Редактировать
+                        {t("admin.patients.actions.edit")}
                       </button>
                       <button type="button" className="danger" onClick={() => remove(p.id)}>
-                        Удалить
+                        {t("admin.patients.actions.delete")}
                       </button>
                     </div>
                   )}
@@ -301,57 +321,51 @@ export default function AdminPatientsPage() {
               </div>
 
               <div className="pCardBottom">
-                <div className="pSubTitle">Последние записи</div>
+                <div className="pSubTitle">{t("admin.patients.lastAppointments")}</div>
 
                 {lastVisit ? (
                   <div className="pDatePill">{lastVisit}</div>
                 ) : (
-                  <div className="pEmptyBar">Записей нет</div>
+                  <div className="pEmptyBar">{t("admin.patients.noAppointments")}</div>
                 )}
               </div>
             </div>
           );
         })}
 
-        {!loading && items.length === 0 && (
-          <div className="pEmptyState">Клиентов нет</div>
+        {!loading && sortedItems.length === 0 && (
+          <div className="pEmptyState">{t("admin.patients.empty")}</div>
         )}
       </div>
 
       <div className="pPager">
-        <button
-          className="pPagerBtn"
-          disabled={page <= 1 || loading}
-          onClick={() => safeSetPage(page - 1)}
-        >
-          ‹ Previous
+        <button className="pPagerBtn" disabled={page <= 1 || loading} onClick={() => safeSetPage(page - 1)}>
+          {t("admin.patients.pager.prev")}
         </button>
 
         <span className="pPagerInfo">
           {page} / {totalPages}
         </span>
 
-        <button
-          className="pPagerBtn"
-          disabled={page >= totalPages || loading}
-          onClick={() => safeSetPage(page + 1)}
-        >
-          Next ›
+        <button className="pPagerBtn" disabled={page >= totalPages || loading} onClick={() => safeSetPage(page + 1)}>
+          {t("admin.patients.pager.next")}
         </button>
       </div>
 
-      {/* MODAL */}
       {isModalOpen && (
         <div className="pModalOverlay" role="dialog" aria-modal="true">
           <div className="pModal">
             <div className="pModalHead">
               <div className="pModalTitle">
-                {editingId ? `Редактировать клиента #${editingId}` : "Добавить клиента"}
+                {editingId
+                  ? t("admin.patients.modal.editTitle", { id: editingId })
+                  : t("admin.patients.modal.createTitle")}
               </div>
+
               <button
                 className="pModalClose"
                 onClick={() => setIsModalOpen(false)}
-                aria-label="Закрыть"
+                aria-label={t("admin.patients.modal.close")}
                 type="button"
               >
                 ×
@@ -361,59 +375,69 @@ export default function AdminPatientsPage() {
             <form onSubmit={submit} className="pForm">
               <div className="pFormGrid3">
                 <label className="pField">
-                  <span>Имя *</span>
+                  <span>{t("admin.patients.form.firstName")} *</span>
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                 </label>
+
                 <label className="pField">
-                  <span>Фамилия *</span>
+                  <span>{t("admin.patients.form.lastName")} *</span>
                   <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
                 </label>
+
                 <label className="pField">
-                  <span>Отчество</span>
+                  <span>{t("admin.patients.form.middleName")}</span>
                   <input value={middleName} onChange={(e) => setMiddleName(e.target.value)} />
                 </label>
               </div>
 
               <div className="pFormGrid3">
                 <label className="pField">
-                  <span>Дата рождения</span>
+                  <span>{t("admin.patients.form.birthDate")}</span>
                   <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
                 </label>
+
                 <label className="pField">
-                  <span>Пол</span>
+                  <span>{t("admin.patients.form.gender")}</span>
                   <select value={gender} onChange={(e) => setGender(e.target.value)}>
-                    <option value="U">U (Unknown)</option>
-                    <option value="M">M (Male)</option>
-                    <option value="F">F (Female)</option>
-                    <option value="O">O (Other)</option>
+                    <option value="U">{genderLabel("U")}</option>
+                    <option value="M">{genderLabel("M")}</option>
+                    <option value="F">{genderLabel("F")}</option>
+                    <option value="O">{genderLabel("O")}</option>
                   </select>
                 </label>
+
                 <label className="pField">
-                  <span>Телефон</span>
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 ..." />
+                  <span>{t("admin.patients.form.phone")}</span>
+                  <input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder={t("admin.patients.form.phonePlaceholder")}
+                  />
                 </label>
               </div>
 
               <div className="pFormGrid2">
                 <label className="pField">
-                  <span>Email</span>
+                  <span>{t("admin.patients.form.email")}</span>
                   <input value={email} onChange={(e) => setEmail(e.target.value)} />
                 </label>
+
                 <label className="pField">
-                  <span>Адрес</span>
+                  <span>{t("admin.patients.form.address")}</span>
                   <input value={address} onChange={(e) => setAddress(e.target.value)} />
                 </label>
               </div>
 
               <label className="pField">
-                <span>Комментарий</span>
+                <span>{t("admin.patients.form.comment")}</span>
                 <textarea rows={3} value={comment} onChange={(e) => setComment(e.target.value)} />
               </label>
 
               <div className="pFormActions">
                 <button className="pPrimary" type="submit">
-                  {editingId ? "Сохранить" : "Создать"}
+                  {editingId ? t("common.save") : t("admin.patients.modal.createBtn")}
                 </button>
+
                 <button
                   className="pGhost"
                   type="button"
@@ -422,7 +446,7 @@ export default function AdminPatientsPage() {
                     setIsModalOpen(false);
                   }}
                 >
-                  Отмена
+                  {t("common.cancel")}
                 </button>
               </div>
             </form>

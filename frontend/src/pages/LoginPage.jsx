@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import "../styles/login.css";
+import { useTranslation } from "react-i18next";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const nav = useNavigate();
 
@@ -32,11 +34,11 @@ export default function LoginPage() {
   return (
     <div className="loginPage">
       <div className="loginCard">
-        <h2 className="loginTitle">Login</h2>
+        <h2 className="loginTitle">{t("auth.login")}</h2>
 
         <form onSubmit={onSubmit} className="loginForm">
           <label className="loginLabel">
-            Email
+            {t("auth.email")}
             <input
               className="loginInput"
               placeholder="admin@clinic.local"
@@ -47,7 +49,7 @@ export default function LoginPage() {
           </label>
 
           <label className="loginLabel">
-            Password
+            {t("auth.password")}
             <input
               className="loginInput"
               placeholder="••••••••"
@@ -59,13 +61,11 @@ export default function LoginPage() {
           </label>
 
           <button className="loginButton" disabled={loading} type="submit">
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? t("auth.signingIn") : t("auth.signIn")}
           </button>
         </form>
 
-        {err && (
-          <pre className="loginError">{JSON.stringify(err, null, 2)}</pre>
-        )}
+        {err && <pre className="loginError">{JSON.stringify(err, null, 2)}</pre>}
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { adminApi } from "../../api/adminApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import "../../styles/AdminAppointmentsPage.css";
+import { useTranslation } from "react-i18next";
 
 function useDebouncedValue(value, delay = 350) {
   const [debounced, setDebounced] = useState(value);
@@ -54,11 +55,16 @@ function pickDoctor(a) {
   );
 }
 
-function pickService(a) {
+function pickService(a, lang) {
   const s = a?.service;
   if (!s) return "—";
   if (typeof s === "string" || typeof s === "number") return String(s);
-  return s?.name_ru || s?.name_en || s?.name || s?.code || s?.id || "—";
+
+  if (lang === "ru") return s?.name_ru || s?.name_en || s?.name_kk || s?.name || s?.code || s?.id || "—";
+  if (lang === "en") return s?.name_en || s?.name_ru || s?.name_kk || s?.name || s?.code || s?.id || "—";
+  if (lang === "kk") return s?.name_kk || s?.name_ru || s?.name_en || s?.name || s?.code || s?.id || "—";
+
+  return s?.name_ru || s?.name_en || s?.name_kk || s?.name || s?.code || s?.id || "—";
 }
 
 function pickRoom(a) {
@@ -68,19 +74,10 @@ function pickRoom(a) {
   return r?.name || r?.id || "—";
 }
 
-function statusLabel(st) {
-  if (!st) return "—";
-  const map = {
-    SCHEDULED: "Scheduled",
-    CONFIRMED: "Confirmed",
-    COMPLETED: "Completed",
-    CANCELLED: "Cancelled",
-    NO_SHOW: "No show",
-  };
-  return map[st] || st;
-}
-
 export default function AdminAppointmentsPage() {
+  const { t, i18n } = useTranslation();
+  const lang = (i18n.language || "ru").slice(0, 2);
+
   const [page, setPage] = useState(1);
 
   const [status, setStatus] = useState("");
@@ -96,6 +93,18 @@ export default function AdminAppointmentsPage() {
 
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const statusLabel = (st) => {
+    if (!st) return "—";
+    const map = {
+      SCHEDULED: t("admin.appointments.status.scheduled"),
+      CONFIRMED: t("admin.appointments.status.confirmed"),
+      COMPLETED: t("admin.appointments.status.completed"),
+      CANCELLED: t("admin.appointments.status.cancelled"),
+      NO_SHOW: t("admin.appointments.status.noShow"),
+    };
+    return map[st] || st;
+  };
 
   const params = useMemo(() => {
     const p = { page };
@@ -126,7 +135,6 @@ export default function AdminAppointmentsPage() {
       if (!pageSize && gotItems.length > 0) setPageSize(gotItems.length);
     } catch (e) {
       const detail = e?.response?.data?.detail;
-      // страховка от "Invalid page."
       if (detail === "Invalid page.") {
         setErr(null);
         setPage(1);
@@ -152,7 +160,7 @@ export default function AdminAppointmentsPage() {
   };
 
   const remove = async (id) => {
-    if (!confirm("Delete appointment?")) return;
+    if (!confirm(t("admin.appointments.confirmDelete"))) return;
     setErr(null);
     try {
       await adminApi.deleteAppointment(id);
@@ -165,13 +173,13 @@ export default function AdminAppointmentsPage() {
   return (
     <div className="aPage">
       <div className="aTop">
-        <div className="aBreadcrumb">Записи</div>
+        <div className="aBreadcrumb">{t("admin.appointments.breadcrumb")}</div>
 
         <div className="aHeadRow">
-          <h1 className="aTitle">Записи</h1>
+          <h1 className="aTitle">{t("admin.appointments.title")}</h1>
           <Link className="aAddBtn" to="/admin/appointments/new">
             <span className="aAddPlus">+</span>
-            Новая запись
+            {t("admin.appointments.new")}
           </Link>
         </div>
 
@@ -199,12 +207,12 @@ export default function AdminAppointmentsPage() {
                 setPage(1);
                 setSearch(e.target.value);
               }}
-              placeholder="Поиск (id, reason, comment...)"
+              placeholder={t("admin.appointments.searchPlaceholder")}
             />
           </div>
 
           <label className="aChip">
-            <span>Статус</span>
+            <span>{t("admin.appointments.filters.status")}</span>
             <select
               className="aSelect"
               value={status}
@@ -213,7 +221,7 @@ export default function AdminAppointmentsPage() {
                 setStatus(e.target.value);
               }}
             >
-              <option value="">Все</option>
+              <option value="">{t("admin.appointments.filters.all")}</option>
               <option value="SCHEDULED">SCHEDULED</option>
               <option value="CONFIRMED">CONFIRMED</option>
               <option value="COMPLETED">COMPLETED</option>
@@ -223,7 +231,7 @@ export default function AdminAppointmentsPage() {
           </label>
 
           <label className="aChip">
-            <span>С</span>
+            <span>{t("admin.appointments.filters.from")}</span>
             <input
               className="aDate"
               type="date"
@@ -236,7 +244,7 @@ export default function AdminAppointmentsPage() {
           </label>
 
           <label className="aChip">
-            <span>По</span>
+            <span>{t("admin.appointments.filters.to")}</span>
             <input
               className="aDate"
               type="date"
@@ -249,13 +257,15 @@ export default function AdminAppointmentsPage() {
           </label>
 
           <button className="aGhostBtn" type="button" onClick={resetFilters}>
-            Сбросить
+            {t("admin.appointments.reset")}
           </button>
         </div>
 
         <div className="aMeta">
-          <span>Всего: {count}</span>
-          {loading && <span className="aLoading">Загрузка…</span>}
+          <span>
+            {t("admin.appointments.total")}: {count}
+          </span>
+          {loading && <span className="aLoading">{t("admin.appointments.loading")}</span>}
         </div>
 
         {err && (
@@ -269,16 +279,16 @@ export default function AdminAppointmentsPage() {
         <table className="aTable">
           <thead>
             <tr>
-              <th className="aTh">ID</th>
-              <th className="aTh">Start</th>
-              <th className="aTh">End</th>
-              <th className="aTh">Status</th>
-              <th className="aTh">Patient</th>
-              <th className="aTh">Doctor</th>
-              <th className="aTh">Service</th>
-              <th className="aTh">Room</th>
-              <th className="aTh">Reason</th>
-              <th className="aTh aThRight">Actions</th>
+              <th className="aTh">{t("admin.appointments.table.id")}</th>
+              <th className="aTh">{t("admin.appointments.table.start")}</th>
+              <th className="aTh">{t("admin.appointments.table.end")}</th>
+              <th className="aTh">{t("admin.appointments.table.status")}</th>
+              <th className="aTh">{t("admin.appointments.table.patient")}</th>
+              <th className="aTh">{t("admin.appointments.table.doctor")}</th>
+              <th className="aTh">{t("admin.appointments.table.service")}</th>
+              <th className="aTh">{t("admin.appointments.table.room")}</th>
+              <th className="aTh">{t("admin.appointments.table.reason")}</th>
+              <th className="aTh aThRight">{t("admin.appointments.table.actions")}</th>
             </tr>
           </thead>
 
@@ -295,7 +305,7 @@ export default function AdminAppointmentsPage() {
 
                 <td className="aTd">{pickPatient(a)}</td>
                 <td className="aTd">{pickDoctor(a)}</td>
-                <td className="aTd">{pickService(a)}</td>
+                <td className="aTd">{pickService(a, lang)}</td>
                 <td className="aTd">{pickRoom(a)}</td>
 
                 <td className="aTd aEllipsis" title={a.reason || ""}>
@@ -305,13 +315,13 @@ export default function AdminAppointmentsPage() {
                 <td className="aTd aTdRight">
                   <div className="aActions">
                     <Link className="aLinkBtn" to={`/admin/appointments/${a.id}`}>
-                      Open
+                      {t("admin.appointments.actions.open")}
                     </Link>
                     <Link className="aLinkBtn" to={`/admin/appointments/${a.id}/edit`}>
-                      Edit
+                      {t("admin.appointments.actions.edit")}
                     </Link>
                     <button className="aDangerBtn" type="button" onClick={() => remove(a.id)}>
-                      Delete
+                      {t("admin.appointments.actions.delete")}
                     </button>
                   </div>
                 </td>
@@ -321,7 +331,7 @@ export default function AdminAppointmentsPage() {
             {!loading && items.length === 0 && (
               <tr>
                 <td className="aEmpty" colSpan="10">
-                  Записей нет
+                  {t("admin.appointments.empty")}
                 </td>
               </tr>
             )}
@@ -330,14 +340,22 @@ export default function AdminAppointmentsPage() {
       </div>
 
       <div className="aPager">
-        <button className="aPagerBtn" disabled={page <= 1 || loading} onClick={() => safeSetPage(page - 1)}>
-          ‹ Previous
+        <button
+          className="aPagerBtn"
+          disabled={page <= 1 || loading}
+          onClick={() => safeSetPage(page - 1)}
+        >
+          {t("admin.appointments.pager.prev")}
         </button>
         <span className="aPagerInfo">
           {page} / {totalPages}
         </span>
-        <button className="aPagerBtn" disabled={page >= totalPages || loading} onClick={() => safeSetPage(page + 1)}>
-          Next ›
+        <button
+          className="aPagerBtn"
+          disabled={page >= totalPages || loading}
+          onClick={() => safeSetPage(page + 1)}
+        >
+          {t("admin.appointments.pager.next")}
         </button>
       </div>
     </div>

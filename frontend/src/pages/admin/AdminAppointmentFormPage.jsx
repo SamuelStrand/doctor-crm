@@ -2,12 +2,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { adminApi } from "../../api/adminApi";
 import "../../styles/AdminAppointmentFormPage.css";
+import { useTranslation } from "react-i18next";
 
 function toInputDatetime(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
 }
 
 function toISOFromInput(dt) {
@@ -16,13 +19,51 @@ function toISOFromInput(dt) {
   return d.toISOString();
 }
 
-function pickName(obj) {
+function pickName(obj, lang) {
   if (!obj) return "";
   if (typeof obj === "string" || typeof obj === "number") return String(obj);
+
+  if (lang === "ru")
+    return (
+      obj.full_name ||
+      obj.name_ru ||
+      obj.name_en ||
+      obj.name_kk ||
+      obj.name ||
+      obj.title ||
+      obj.code ||
+      ""
+    );
+
+  if (lang === "en")
+    return (
+      obj.full_name ||
+      obj.name_en ||
+      obj.name_ru ||
+      obj.name_kk ||
+      obj.name ||
+      obj.title ||
+      obj.code ||
+      ""
+    );
+
+  if (lang === "kk")
+    return (
+      obj.full_name ||
+      obj.name_kk ||
+      obj.name_ru ||
+      obj.name_en ||
+      obj.name ||
+      obj.title ||
+      obj.code ||
+      ""
+    );
+
   return (
     obj.full_name ||
     obj.name_ru ||
     obj.name_en ||
+    obj.name_kk ||
     obj.name ||
     obj.title ||
     obj.code ||
@@ -31,7 +72,6 @@ function pickName(obj) {
 }
 
 function unwrapItems(resp) {
-  // под разные форматы API
   if (!resp) return [];
   if (Array.isArray(resp)) return resp;
   if (Array.isArray(resp.items)) return resp.items;
@@ -40,6 +80,9 @@ function unwrapItems(resp) {
 }
 
 export default function AdminAppointmentFormPage({ mode }) {
+  const { t, i18n } = useTranslation();
+  const lang = (i18n.language || "ru").slice(0, 2);
+
   const { id } = useParams();
   const nav = useNavigate();
 
@@ -72,7 +115,9 @@ export default function AdminAppointmentFormPage({ mode }) {
   const canUseServices = services.length > 0;
   const canUseRooms = rooms.length > 0;
 
-  const title = isEdit ? `Edit appointment #${id}` : "New appointment";
+  const title = isEdit
+    ? t("admin.apptForm.titleEdit", { id })
+    : t("admin.apptForm.titleNew");
 
   const loadRefs = async () => {
     setRefsLoading(true);
@@ -102,7 +147,6 @@ export default function AdminAppointmentFormPage({ mode }) {
     try {
       const a = await adminApi.getAppointment(id);
 
-      // если бэк отдаёт объект — берём id, если число — как есть
       setPatient(a?.patient?.id ?? a?.patient ?? "");
       setDoctor(a?.doctor?.id ?? a?.doctor ?? "");
       setService(a?.service?.id ?? a?.service ?? "");
@@ -127,22 +171,22 @@ export default function AdminAppointmentFormPage({ mode }) {
 
   const validation = useMemo(() => {
     const errors = [];
-    if (!patient) errors.push("patient is required");
-    if (!doctor) errors.push("doctor is required");
-    if (!service) errors.push("service is required");
-    if (!room) errors.push("room is required");
-    if (!startAt) errors.push("start_at is required");
-    if (!endAt) errors.push("end_at is required");
+    if (!patient) errors.push(t("admin.apptForm.validation.patientRequired"));
+    if (!doctor) errors.push(t("admin.apptForm.validation.doctorRequired"));
+    if (!service) errors.push(t("admin.apptForm.validation.serviceRequired"));
+    if (!room) errors.push(t("admin.apptForm.validation.roomRequired"));
+    if (!startAt) errors.push(t("admin.apptForm.validation.startRequired"));
+    if (!endAt) errors.push(t("admin.apptForm.validation.endRequired"));
 
     if (startAt && endAt) {
       const s = new Date(startAt).getTime();
       const e = new Date(endAt).getTime();
       if (!Number.isNaN(s) && !Number.isNaN(e) && e <= s) {
-        errors.push("end_at must be after start_at");
+        errors.push(t("admin.apptForm.validation.endAfterStart"));
       }
     }
     return errors;
-  }, [patient, doctor, service, room, startAt, endAt]);
+  }, [patient, doctor, service, room, startAt, endAt, t]);
 
   const save = async (e) => {
     e.preventDefault();
@@ -181,16 +225,16 @@ export default function AdminAppointmentFormPage({ mode }) {
     <div className="afPage">
       <div className="afTop">
         <Link className="afBack" to="/admin/appointments">
-          ← Назад
+          ← {t("common.back")}
         </Link>
 
         <div className="afHeadRow">
           <div>
-            <div className="afBreadcrumb">Записи</div>
+            <div className="afBreadcrumb">{t("admin.appointments.breadcrumb")}</div>
             <h1 className="afTitle">{title}</h1>
             <div className="afSub">
-              Заполни данные записи: пациент, врач, услуга, кабинет и время.
-              {refsLoading ? " (списки загружаются…)" : ""}
+              {t("admin.apptForm.sub")}
+              {refsLoading ? ` (${t("admin.apptForm.refsLoading")})` : ""}
             </div>
           </div>
 
@@ -201,15 +245,15 @@ export default function AdminAppointmentFormPage({ mode }) {
               onClick={() => nav("/admin/appointments")}
               disabled={saving}
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button className="afPrimary" type="submit" form="apptForm" disabled={saving}>
-              {saving ? "Saving…" : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </button>
           </div>
         </div>
 
-        {loading && <div className="afLoading">Загрузка…</div>}
+        {loading && <div className="afLoading">{t("common.loading")}</div>}
 
         {err && (
           <div className="afError">
@@ -219,20 +263,26 @@ export default function AdminAppointmentFormPage({ mode }) {
       </div>
 
       <div className="afCard">
-        <div className="afCardTitle">Appointment form</div>
+        <div className="afCardTitle">{t("admin.apptForm.formTitle")}</div>
 
         <form id="apptForm" onSubmit={save} className="afForm">
           {/* ROW 1 */}
           <div className="afGrid2">
             <div className="afField">
-              <div className="afLabel">Patient *</div>
+              <div className="afLabel">
+                {t("admin.apptForm.fields.patient")} *
+              </div>
 
               {canUsePatients ? (
-                <select className="afControl" value={patient} onChange={(e) => setPatient(e.target.value)}>
-                  <option value="">— select —</option>
+                <select
+                  className="afControl"
+                  value={patient}
+                  onChange={(e) => setPatient(e.target.value)}
+                >
+                  <option value="">{t("admin.apptForm.select")}</option>
                   {patients.map((p) => (
                     <option key={p.id} value={p.id}>
-                      #{p.id} {pickName(p)}
+                      #{p.id} {pickName(p, lang)}
                     </option>
                   ))}
                 </select>
@@ -241,22 +291,30 @@ export default function AdminAppointmentFormPage({ mode }) {
                   className="afControl"
                   value={patient}
                   onChange={(e) => setPatient(e.target.value)}
-                  placeholder="Patient ID"
+                  placeholder={t("admin.apptForm.placeholders.patientId")}
                 />
               )}
 
-              {!canUsePatients && <div className="afHint">Список пациентов не загрузился — введи ID вручную.</div>}
+              {!canUsePatients && (
+                <div className="afHint">{t("admin.apptForm.hints.patientsNotLoaded")}</div>
+              )}
             </div>
 
             <div className="afField">
-              <div className="afLabel">Doctor *</div>
+              <div className="afLabel">
+                {t("admin.apptForm.fields.doctor")} *
+              </div>
 
               {canUseDoctors ? (
-                <select className="afControl" value={doctor} onChange={(e) => setDoctor(e.target.value)}>
-                  <option value="">— select —</option>
+                <select
+                  className="afControl"
+                  value={doctor}
+                  onChange={(e) => setDoctor(e.target.value)}
+                >
+                  <option value="">{t("admin.apptForm.select")}</option>
                   {doctors.map((d) => (
                     <option key={d.id} value={d.id}>
-                      #{d.id} {pickName(d?.doctor_profile) || pickName(d)}
+                      #{d.id} {pickName(d?.doctor_profile, lang) || pickName(d, lang)}
                     </option>
                   ))}
                 </select>
@@ -265,25 +323,34 @@ export default function AdminAppointmentFormPage({ mode }) {
                   className="afControl"
                   value={doctor}
                   onChange={(e) => setDoctor(e.target.value)}
-                  placeholder="Doctor ID"
+                  placeholder={t("admin.apptForm.placeholders.doctorId")}
                 />
               )}
 
-              {!canUseDoctors && <div className="afHint">Список врачей не загрузился — введи ID вручную.</div>}
+              {!canUseDoctors && (
+                <div className="afHint">{t("admin.apptForm.hints.doctorsNotLoaded")}</div>
+              )}
             </div>
           </div>
 
           {/* ROW 2 */}
           <div className="afGrid2">
             <div className="afField">
-              <div className="afLabel">Service *</div>
+              <div className="afLabel">
+                {t("admin.apptForm.fields.service")} *
+              </div>
 
               {canUseServices ? (
-                <select className="afControl" value={service} onChange={(e) => setService(e.target.value)}>
-                  <option value="">— select —</option>
+                <select
+                  className="afControl"
+                  value={service}
+                  onChange={(e) => setService(e.target.value)}
+                >
+                  <option value="">{t("admin.apptForm.select")}</option>
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
-                      #{s.id} {s.code ? `${s.code} — ` : ""}{pickName(s)}
+                      #{s.id} {s.code ? `${s.code} — ` : ""}
+                      {pickName(s, lang)}
                     </option>
                   ))}
                 </select>
@@ -292,22 +359,30 @@ export default function AdminAppointmentFormPage({ mode }) {
                   className="afControl"
                   value={service}
                   onChange={(e) => setService(e.target.value)}
-                  placeholder="Service ID"
+                  placeholder={t("admin.apptForm.placeholders.serviceId")}
                 />
               )}
 
-              {!canUseServices && <div className="afHint">Список услуг не загрузился — введи ID вручную.</div>}
+              {!canUseServices && (
+                <div className="afHint">{t("admin.apptForm.hints.servicesNotLoaded")}</div>
+              )}
             </div>
 
             <div className="afField">
-              <div className="afLabel">Room *</div>
+              <div className="afLabel">
+                {t("admin.apptForm.fields.room")} *
+              </div>
 
               {canUseRooms ? (
-                <select className="afControl" value={room} onChange={(e) => setRoom(e.target.value)}>
-                  <option value="">— select —</option>
+                <select
+                  className="afControl"
+                  value={room}
+                  onChange={(e) => setRoom(e.target.value)}
+                >
+                  <option value="">{t("admin.apptForm.select")}</option>
                   {rooms.map((r) => (
                     <option key={r.id} value={r.id}>
-                      #{r.id} {pickName(r)}
+                      #{r.id} {pickName(r, lang)}
                     </option>
                   ))}
                 </select>
@@ -316,70 +391,81 @@ export default function AdminAppointmentFormPage({ mode }) {
                   className="afControl"
                   value={room}
                   onChange={(e) => setRoom(e.target.value)}
-                  placeholder="Room ID"
+                  placeholder={t("admin.apptForm.placeholders.roomId")}
                 />
               )}
 
-              {!canUseRooms && <div className="afHint">Список кабинетов не загрузился — введи ID вручную.</div>}
+              {!canUseRooms && (
+                <div className="afHint">{t("admin.apptForm.hints.roomsNotLoaded")}</div>
+              )}
             </div>
           </div>
 
           {/* ROW 3 */}
           <div className="afGrid2">
             <div className="afField">
-              <div className="afLabel">Start *</div>
+              <div className="afLabel">
+                {t("admin.apptForm.fields.start")} *
+              </div>
               <input
                 className="afControl"
                 type="datetime-local"
                 value={startAt}
                 onChange={(e) => setStartAt(e.target.value)}
               />
-              <div className="afHint">Локальное время компьютера.</div>
+              <div className="afHint">{t("admin.apptForm.hints.localTime")}</div>
             </div>
 
             <div className="afField">
-              <div className="afLabel">End *</div>
+              <div className="afLabel">
+                {t("admin.apptForm.fields.end")} *
+              </div>
               <input
                 className="afControl"
                 type="datetime-local"
                 value={endAt}
                 onChange={(e) => setEndAt(e.target.value)}
               />
-              <div className="afHint">End должен быть позже Start.</div>
+              <div className="afHint">{t("admin.apptForm.hints.endAfterStart")}</div>
             </div>
           </div>
 
           {/* ROW 4 */}
           <div className="afGrid2">
             <div className="afField">
-              <div className="afLabel">Reason</div>
+              <div className="afLabel">{t("admin.apptForm.fields.reason")}</div>
               <input
                 className="afControl"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Reason"
+                placeholder={t("admin.apptForm.placeholders.reason")}
               />
             </div>
 
             <div className="afField">
-              <div className="afLabel">Comment</div>
+              <div className="afLabel">{t("admin.apptForm.fields.comment")}</div>
               <textarea
                 className="afControl afTextarea"
                 rows={3}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Comment"
+                placeholder={t("admin.apptForm.placeholders.comment")}
               />
             </div>
           </div>
 
           {/* FOOTER ACTIONS (mobile friendly) */}
           <div className="afFooter">
-            <button className="afGhost" type="button" onClick={() => nav("/admin/appointments")} disabled={saving}>
-              Cancel
+            <button
+              className="afGhost"
+              type="button"
+              onClick={() => nav("/admin/appointments")}
+              disabled={saving}
+            >
+              {t("common.cancel")}
             </button>
             <button className="afPrimary" type="submit" disabled={saving}>
-              {saving ? "Saving…" : "Save"}
+              {saving ? t("common.saving") : t("common.save")}
             </button>
           </div>
         </form>

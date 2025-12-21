@@ -11,7 +11,11 @@ export const http = axios.create({
 http.interceptors.request.use((config) => {
   const token = tokenStorage.getAccess();
   if (token) config.headers.Authorization = `Bearer ${token}`;
-
+  const lang =
+    localStorage.getItem("i18nextLng") ||
+    localStorage.getItem("lang") ||
+    "ru";
+  config.headers["Accept-Language"] = lang;
   const isFormData =
     typeof FormData !== "undefined" && config.data instanceof FormData;
 

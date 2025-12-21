@@ -20,6 +20,17 @@ function parseYmdToDate(s) {
   d.setHours(0, 0, 0, 0);
   return d;
 }
+
+// ✅ для бэка (IsoDateTimeFilter): границы суток в ISO
+function toIsoStartZ(ymdStr) {
+  if (!ymdStr) return null;
+  return `${ymdStr}T00:00:00Z`;
+}
+function toIsoEndZ(ymdStr) {
+  if (!ymdStr) return null;
+  return `${ymdStr}T23:59:59Z`;
+}
+
 function appointmentLocalDate(a) {
   const iso = a?.start_at || a?.start || a?.start_time;
   if (!iso) return null;
@@ -79,7 +90,6 @@ function asText(v) {
 }
 
 function buildSearchHaystack(a) {
-  // максимально "широкая" строка для локального поиска
   const parts = [
     a?.id,
     a?.status,
@@ -105,8 +115,8 @@ export default function DoctorAppointmentsPage() {
   const [page, setPage] = useState(1);
 
   const [status, setStatus] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateFrom, setDateFrom] = useState(""); // YYYY-MM-DD (UI)
+  const [dateTo, setDateTo] = useState("");     // YYYY-MM-DD (UI)
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
@@ -117,7 +127,6 @@ export default function DoctorAppointmentsPage() {
   const [loading, setLoading] = useState(false);
   const [actingId, setActingId] = useState(null);
 
-  // если серверный search не работает — переключаемся на локальный
   const [serverSearchOk, setServerSearchOk] = useState(true);
 
   const load = async () => {
@@ -125,24 +134,25 @@ export default function DoctorAppointmentsPage() {
     setErr(null);
 
     const q = debouncedSearch.trim();
-    try {
-      // 1) пробуем серверный поиск
-      const data = await doctorApi.listAppointments({
-        page,
-        ...(dateFrom ? { date_from: dateFrom } : {}),
-        ...(dateTo ? { date_to: dateTo } : {}),
-        ...(q ? { search: q } : {}),
-      });
 
+    // ✅ преобразуем YYYY-MM-DD -> ISO datetime (для IsoDateTimeFilter на бэке)
+    const dateFromIso = dateFrom ? toIsoStartZ(dateFrom) : null;
+    const dateToIso = dateTo ? toIsoEndZ(dateTo) : null;
+
+    try {
+      const params = {
+        page,
+        ...(dateFromIso ? { date_from: dateFromIso } : {}),
+        ...(dateToIso ? { date_to: dateToIso } : {}),
+        ...(q ? { search: q } : {}),
+      };
+
+      const data = await doctorApi.listAppointments(params);
       const { items, count } = unwrapPaginated(data);
       setItems(items);
       setCount(count);
-
-      // если у нас был search, но сервер всегда отдаёт 0 — возможно search не поддерживается.
-      // тут не будем сразу выключать, но запомним "вроде ок".
       setServerSearchOk(true);
     } catch (e) {
-      // если запрос с search упал — пробуем без search и включим локальный поиск
       const qHad = debouncedSearch.trim().length > 0;
       if (!qHad) {
         setErr(e?.response?.data ?? { detail: e.message });
@@ -154,17 +164,18 @@ export default function DoctorAppointmentsPage() {
       }
 
       try {
-        const data2 = await doctorApi.listAppointments({
+        const params2 = {
           page,
-          ...(dateFrom ? { date_from: dateFrom } : {}),
-          ...(dateTo ? { date_to: dateTo } : {}),
+          ...(dateFromIso ? { date_from: dateFromIso } : {}),
+          ...(dateToIso ? { date_to: dateToIso } : {}),
           // без search
-        });
+        };
 
+        const data2 = await doctorApi.listAppointments(params2);
         const { items: items2, count: count2 } = unwrapPaginated(data2);
         setItems(items2);
         setCount(count2);
-        setServerSearchOk(false); // будем искать локально
+        setServerSearchOk(false);
         setErr(null);
       } catch (e2) {
         setErr(e2?.response?.data ?? { detail: e2.message });
@@ -188,21 +199,17 @@ export default function DoctorAppointmentsPage() {
     const q = debouncedSearch.trim().toLowerCase();
 
     return items.filter((a) => {
-      // статус
       if (status && a.status !== status) return false;
 
-      // даты (локально)
       const ad = appointmentLocalDate(a);
       if (fromD && ad && ad < fromD) return false;
       if (toD && ad && ad > toD) return false;
 
-      // поиск: если серверный не ок — применяем локальный
       if (q && !serverSearchOk) {
         const hay = buildSearchHaystack(a);
         return hay.includes(q);
       }
 
-      // если серверный ок — не фильтруем повторно (иначе будет “двойной фильтр”)
       return true;
     });
   }, [items, status, fromD, toD, debouncedSearch, serverSearchOk]);
@@ -248,7 +255,6 @@ export default function DoctorAppointmentsPage() {
             <SearchInput
               value={search}
               onChange={(v) => {
-                // на всякий случай нормализуем
                 const value = typeof v === "string" ? v : v?.target?.value ?? "";
                 setPage(1);
                 setSearch(value);
@@ -277,31 +283,30 @@ export default function DoctorAppointmentsPage() {
           </label>
 
           <label className="daChip">
-  <span>From</span>
-  <input
-    className="daInput"
-    type="date"
-    value={dateFrom}
-    onChange={(e) => {
-      setPage(1);
-      setDateFrom(e.target.value);
-    }}
-  />
-</label>
+            <span>From</span>
+            <input
+              className="daInput"
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setPage(1);
+                setDateFrom(e.target.value);
+              }}
+            />
+          </label>
 
-<label className="daChip">
-  <span>To</span>
-  <input
-    className="daInput"
-    type="date"
-    value={dateTo}
-    onChange={(e) => {
-      setPage(1);
-      setDateTo(e.target.value);
-    }}
-  />
-</label>
-
+          <label className="daChip">
+            <span>To</span>
+            <input
+              className="daInput"
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setPage(1);
+                setDateTo(e.target.value);
+              }}
+            />
+          </label>
 
           <button className="daGhost" onClick={reset} type="button">
             Reset

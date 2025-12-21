@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "../../styles/adminDashboard.css";
+import { useTranslation } from "react-i18next";
 
 function Card({ title, desc, to }) {
   return (
@@ -15,36 +16,58 @@ function Card({ title, desc, to }) {
 }
 
 export default function AdminDashboardPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="adminDashPage">
       <div className="adminDashContainer">
         <div className="adminDashHeader">
           <div>
-            <h2 className="adminDashTitle">Admin • Dashboard</h2>
-            <p className="adminDashSubtitle">
-              Manage clinic data: appointments, patients, doctors, services and rooms.
-            </p>
+            <h2 className="adminDashTitle">{t("admin.dashboard.title")}</h2>
+            <p className="adminDashSubtitle">{t("admin.dashboard.subtitle")}</p>
 
             <div className="adminDashBadgeRow">
-              <span className="adminDashBadge">CRUD</span>
-              <span className="adminDashBadge">Search & filters</span>
-              <span className="adminDashBadge">Role-based access</span>
+              <span className="adminDashBadge">{t("admin.dashboard.badges.crud")}</span>
+              <span className="adminDashBadge">{t("admin.dashboard.badges.search")}</span>
+              <span className="adminDashBadge">{t("admin.dashboard.badges.roleAccess")}</span>
             </div>
           </div>
         </div>
 
         <div className="adminDashGrid">
-          <Card title="Appointments" desc="Manage all appointments, search, filters, edit & delete" to="/admin/appointments" />
-          <Card title="Patients" desc="Patients list with CRUD + search" to="/admin/patients" />
-          <Card title="Doctors" desc="Doctors list with CRUD + search" to="/admin/doctors" />
-          <Card title="Services" desc="Clinic services list and management" to="/admin/services" />
-          <Card title="Rooms" desc="Rooms management and configuration" to="/admin/rooms" />
-          <Card title="Schedule" desc="View overall doctor schedules (admin view)" to="/admin/schedule" />
+          <Card
+            title={t("admin.dashboard.cards.appointments.title")}
+            desc={t("admin.dashboard.cards.appointments.desc")}
+            to="/admin/appointments"
+          />
+          <Card
+            title={t("admin.dashboard.cards.patients.title")}
+            desc={t("admin.dashboard.cards.patients.desc")}
+            to="/admin/patients"
+          />
+          <Card
+            title={t("admin.dashboard.cards.doctors.title")}
+            desc={t("admin.dashboard.cards.doctors.desc")}
+            to="/admin/doctors"
+          />
+          <Card
+            title={t("admin.dashboard.cards.services.title")}
+            desc={t("admin.dashboard.cards.services.desc")}
+            to="/admin/services"
+          />
+          <Card
+            title={t("admin.dashboard.cards.rooms.title")}
+            desc={t("admin.dashboard.cards.rooms.desc")}
+            to="/admin/rooms"
+          />
+          <Card
+            title={t("admin.dashboard.cards.schedule.title")}
+            desc={t("admin.dashboard.cards.schedule.desc")}
+            to="/admin/schedule"
+          />
         </div>
 
-        <div className="adminDashFooter">
-          Tip: use the search input inside each section (Patients / Doctors / Appointments) to quickly find records.
-        </div>
+        <div className="adminDashFooter">{t("admin.dashboard.footerTip")}</div>
       </div>
     </div>
   );
