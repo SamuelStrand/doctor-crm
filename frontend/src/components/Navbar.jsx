@@ -2,12 +2,12 @@ import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import "../styles/Navbar.css";
 
-import { useTranslation } from "react-i18next"; // NEW
-import LanguageSwitcher from "./common/LanguageSwitcher"; // NEW
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./common/LanguageSwitcher";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { t } = useTranslation(); // NEW
+  const { t } = useTranslation();
 
   const isDoctor = user?.role === "DOCTOR";
   const isAdmin = user?.role === "ADMIN";
@@ -22,7 +22,7 @@ export default function Navbar() {
           Doctor CRM
         </Link>
 
-        <nav className="nbNav">
+        <nav className="nbNav nbNavScroll">
           <NavLink to="/" className={navLinkClass}>
             {t("nav.home")}
           </NavLink>
@@ -76,12 +76,19 @@ export default function Navbar() {
               <NavLink to="/admin/rooms" className={navLinkClass}>
                 {t("nav.rooms")}
               </NavLink>
+
+              {/* ВАЖНО: тоже nbLink */}
+              <NavLink to="/search" className={navLinkClass}>
+                {t("nav.search")}
+              </NavLink>
             </>
           )}
         </nav>
 
         <div className="nbRight">
-          <LanguageSwitcher /> {/* NEW: переключатель */}
+          <div className="nbLang">
+            <LanguageSwitcher />
+          </div>
 
           {user ? (
             <>

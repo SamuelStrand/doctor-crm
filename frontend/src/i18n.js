@@ -18,6 +18,7 @@ const resources = {
       },
 
       nav: {
+        search: "Глобальный поиск",
         home: "Главная",
         doctor: "Доктор",
         admin: "Админ",
@@ -31,7 +32,23 @@ const resources = {
         services: "Услуги",
         rooms: "Кабинеты",
       },
-
+      searchPage: {
+        title: "Глобальный поиск",
+        placeholder: "Поиск по пациентам, услугам, записям...",
+        loading: "Ищем...",
+        patients: "Пациенты",
+        services: "Услуги",
+        appointments: "Записи",
+        empty: "Ничего не найдено",
+        open: "Открыть",
+        phone: "Телефон",
+        code: "Код",
+        duration: "Длительность",
+        price: "Цена",
+        patient: "Пациент",
+        doctor: "Доктор",
+        service: "Услуга",
+    },
       auth: {
         login: "Вход",
         email: "Почта",
@@ -959,6 +976,7 @@ const resources = {
       },
 
       nav: {
+        search: "Global search",
         home: "Home",
         doctor: "Doctor",
         admin: "Admin",
@@ -972,6 +990,23 @@ const resources = {
         services: "Services",
         rooms: "Rooms",
       },
+      searchPage: {
+        title: "Global search",
+        placeholder: "Search patients, services, appointments...",
+        loading: "Searching...",
+        patients: "Patients",
+        services: "Services",
+        appointments: "Appointments",
+        empty: "No results",
+        open: "Open",
+        phone: "Phone",
+        code: "Code",
+        duration: "Duration",
+        price: "Price",
+        patient: "Patient",
+        doctor: "Doctor",
+        service: "Service",
+    },
 
       auth: {
         login: "Login",

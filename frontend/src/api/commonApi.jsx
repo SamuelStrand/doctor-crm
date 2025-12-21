@@ -5,4 +5,7 @@ export const commonApi = {
     const { data } = await http.get("/me/");
     return data;
   },
+  search(params = {}) {
+    return http.get("/search/", { params });
+  },
 };

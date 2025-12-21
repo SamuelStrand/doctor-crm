@@ -4,6 +4,7 @@ import Home from "./pages/HomePage";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import RoleRoute from "./routes/RoleRoute";
 import AppLayout from "./layouts/AppLayout";
+import GlobalSearchPage from "./pages/GlobalSearchPage";
 
 import DoctorAppointmentsPage from "./pages/doctor/DoctorAppointmentsPage";
 import DoctorAppointmentDetailPage from "./pages/doctor/DoctorAppointmentDetailPage";
@@ -33,7 +34,15 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<LoginPage />} />
-
+        <Route path="/search" element={
+            <ProtectedRoute>
+              <RoleRoute role="ADMIN">
+                  <GlobalSearchPage />
+              </RoleRoute>
+              <GlobalSearchPage />
+            </ProtectedRoute>
+  }
+/>
         <Route path="/doctor" element={<Navigate to="/doctor/appointments" replace />} />
         <Route
           path="/doctor/appointments"
