@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { doctorApi } from "../../api/doctorApi";
+import { useTranslation } from "react-i18next";
 import "../../styles/DoctorAppointmentDetailPage.css";
 
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
-function fmtDT(iso) {
-  if (!iso) return "—";
+
+function fmtDT(iso, emptyDash = "—") {
+  if (!iso) return emptyDash;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso);
   const yyyy = d.getFullYear();
@@ -17,18 +19,9 @@ function fmtDT(iso) {
   const mi = pad2(d.getMinutes());
   return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
 }
-function statusLabel(st) {
-  const map = {
-    SCHEDULED: "Scheduled",
-    CONFIRMED: "Confirmed",
-    COMPLETED: "Completed",
-    CANCELLED: "Cancelled",
-    NO_SHOW: "No show",
-  };
-  return map[st] || st || "—";
-}
-function pickName(v) {
-  if (!v) return "—";
+
+function pickName(v, emptyDash = "—") {
+  if (!v) return emptyDash;
   if (typeof v === "string" || typeof v === "number") return String(v);
   return (
     v.full_name ||
@@ -38,11 +31,14 @@ function pickName(v) {
     v.title ||
     v.email ||
     v.phone ||
-    (v.id != null ? `#${v.id}` : "—")
+    (v.id != null ? `#${v.id}` : emptyDash)
   );
 }
 
 export default function DoctorAppointmentDetailPage() {
+  const { t } = useTranslation();
+  const emptyDash = t("common.emptyDash");
+
   const { id } = useParams();
   const nav = useNavigate();
 
@@ -51,6 +47,11 @@ export default function DoctorAppointmentDetailPage() {
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
   const [savingStatus, setSavingStatus] = useState(false);
+
+  const statusLabel = (st) =>
+    t(`doctor.appointments.status.${String(st || "").toUpperCase()}`, {
+      defaultValue: st || emptyDash,
+    });
 
   const load = async () => {
     setLoading(true);
@@ -77,7 +78,8 @@ export default function DoctorAppointmentDetailPage() {
   // CONFIRMED -> COMPLETED / NO_SHOW / CANCELLED
   const allowedTargets = useMemo(() => {
     if (currentStatus === "SCHEDULED") return ["CONFIRMED"];
-    if (currentStatus === "CONFIRMED") return ["COMPLETED", "NO_SHOW", "CANCELLED"];
+    if (currentStatus === "CONFIRMED")
+      return ["COMPLETED", "NO_SHOW", "CANCELLED"];
     return [];
   }, [currentStatus]);
 
@@ -88,7 +90,7 @@ export default function DoctorAppointmentDetailPage() {
     try {
       await doctorApi.setStatus(Number(id), nextStatus);
       await load();
-      setStatus(""); // чтобы после сохранения селект сбросился
+      setStatus(""); // сброс селекта
     } catch (e) {
       setErr(e?.response?.data ?? { detail: e.message });
     } finally {
@@ -114,26 +116,29 @@ export default function DoctorAppointmentDetailPage() {
     }
   };
 
-  const start = fmtDT(a?.start_at || a?.start);
-  const end = fmtDT(a?.end_at || a?.end);
+  const start = fmtDT(a?.start_at || a?.start, emptyDash);
+  const end = fmtDT(a?.end_at || a?.end, emptyDash);
 
-  const patient = a?.patient_name ?? pickName(a?.patient);
-  const doctor = a?.doctor_name ?? pickName(a?.doctor);
-  const service = pickName(a?.service);
-  const room = pickName(a?.room);
+  const patient = a?.patient_name ?? pickName(a?.patient, emptyDash);
+  const doctor = a?.doctor_name ?? pickName(a?.doctor, emptyDash);
+  const service = pickName(a?.service, emptyDash);
+  const room = pickName(a?.room, emptyDash);
 
   return (
     <div className="dadPage">
       <div className="dadTop">
         <div className="dadBackRow">
           <Link className="dadBack" to="/doctor/appointments">
-            ← Back
+            {t("doctor.appointmentDetail.back")}
           </Link>
 
           <div className="dadHead">
-            <div className="dadBreadcrumb">Doctor</div>
+            <div className="dadBreadcrumb">
+              {t("doctor.appointmentDetail.breadcrumb")}
+            </div>
             <h1 className="dadTitle">
-              Appointment <span className="dadMono">#{id}</span>
+              {t("doctor.appointmentDetail.title")}{" "}
+              <span className="dadMono">#{id}</span>
             </h1>
           </div>
 
@@ -144,7 +149,7 @@ export default function DoctorAppointmentDetailPage() {
           </div>
         </div>
 
-        {loading && <div className="dadLoading">Loading…</div>}
+        {loading && <div className="dadLoading">{t("common.loading")}</div>}
 
         {err && (
           <div className="dadError">
@@ -157,57 +162,79 @@ export default function DoctorAppointmentDetailPage() {
         <div className="dadGrid">
           {/* main info */}
           <div className="dadCard">
-            <div className="dadCardTitle">Details</div>
+            <div className="dadCardTitle">
+              {t("doctor.appointmentDetail.details.title")}
+            </div>
 
             <div className="dadRows">
               <div className="dadRow">
-                <div className="dadLabel">Start</div>
+                <div className="dadLabel">
+                  {t("doctor.appointmentDetail.details.start")}
+                </div>
                 <div className="dadValue">{start}</div>
               </div>
 
               <div className="dadRow">
-                <div className="dadLabel">End</div>
+                <div className="dadLabel">
+                  {t("doctor.appointmentDetail.details.end")}
+                </div>
                 <div className="dadValue">{end}</div>
               </div>
 
               <div className="dadRow">
-                <div className="dadLabel">Patient</div>
+                <div className="dadLabel">
+                  {t("doctor.appointmentDetail.details.patient")}
+                </div>
                 <div className="dadValue">{patient}</div>
               </div>
 
               <div className="dadRow">
-                <div className="dadLabel">Doctor</div>
-                <div className="dadValue">{doctor || "—"}</div>
+                <div className="dadLabel">
+                  {t("doctor.appointmentDetail.details.doctor")}
+                </div>
+                <div className="dadValue">{doctor || emptyDash}</div>
               </div>
 
               <div className="dadRow">
-                <div className="dadLabel">Service</div>
+                <div className="dadLabel">
+                  {t("doctor.appointmentDetail.details.service")}
+                </div>
                 <div className="dadValue">{service}</div>
               </div>
 
               <div className="dadRow">
-                <div className="dadLabel">Room</div>
+                <div className="dadLabel">
+                  {t("doctor.appointmentDetail.details.room")}
+                </div>
                 <div className="dadValue">{room}</div>
               </div>
 
               <div className="dadRow">
-                <div className="dadLabel">Reason</div>
-                <div className="dadValue">{a?.reason || "—"}</div>
+                <div className="dadLabel">
+                  {t("doctor.appointmentDetail.details.reason")}
+                </div>
+                <div className="dadValue">{a?.reason || emptyDash}</div>
               </div>
 
               <div className="dadRow">
-                <div className="dadLabel">Comment</div>
-                <div className="dadValue">{a?.comment || "—"}</div>
+                <div className="dadLabel">
+                  {t("doctor.appointmentDetail.details.comment")}
+                </div>
+                <div className="dadValue">{a?.comment || emptyDash}</div>
               </div>
             </div>
           </div>
 
           {/* actions */}
           <div className="dadCard">
-            <div className="dadCardTitle">Actions</div>
+            <div className="dadCardTitle">
+              {t("doctor.appointmentDetail.actions.title")}
+            </div>
 
             <div className="dadSection">
-              <div className="dadSectionTitle">Change status</div>
+              <div className="dadSectionTitle">
+                {t("doctor.appointmentDetail.actions.changeStatus")}
+              </div>
 
               <div className="dadFormRow">
                 <select
@@ -216,10 +243,12 @@ export default function DoctorAppointmentDetailPage() {
                   onChange={(e) => setStatus(e.target.value)}
                   disabled={allowedTargets.length === 0 || savingStatus}
                 >
-                  <option value="">-- select --</option>
+                  <option value="">
+                    {t("doctor.appointmentDetail.actions.selectPlaceholder")}
+                  </option>
                   {allowedTargets.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {statusLabel(s)}
                     </option>
                   ))}
                 </select>
@@ -230,7 +259,7 @@ export default function DoctorAppointmentDetailPage() {
                   disabled={!status || savingStatus || allowedTargets.length === 0}
                   type="button"
                 >
-                  {savingStatus ? "Saving…" : "Save"}
+                  {savingStatus ? t("common.saving") : t("common.save")}
                 </button>
               </div>
 
@@ -242,7 +271,7 @@ export default function DoctorAppointmentDetailPage() {
                     disabled={savingStatus}
                     type="button"
                   >
-                    Confirm
+                    {t("doctor.appointmentDetail.actions.quick.confirm")}
                   </button>
                 )}
                 {allowedTargets.includes("COMPLETED") && (
@@ -252,7 +281,7 @@ export default function DoctorAppointmentDetailPage() {
                     disabled={savingStatus}
                     type="button"
                   >
-                    Complete
+                    {t("doctor.appointmentDetail.actions.quick.complete")}
                   </button>
                 )}
                 {allowedTargets.includes("NO_SHOW") && (
@@ -262,7 +291,7 @@ export default function DoctorAppointmentDetailPage() {
                     disabled={savingStatus}
                     type="button"
                   >
-                    No show
+                    {t("doctor.appointmentDetail.actions.quick.noShow")}
                   </button>
                 )}
                 {allowedTargets.includes("CANCELLED") && (
@@ -272,14 +301,16 @@ export default function DoctorAppointmentDetailPage() {
                     disabled={savingStatus}
                     type="button"
                   >
-                    Cancel
+                    {t("doctor.appointmentDetail.actions.quick.cancel")}
                   </button>
                 )}
               </div>
 
               {allowedTargets.length === 0 && (
                 <div className="dadHint">
-                  Status cannot be changed from <b>{currentStatus || "—"}</b>.
+                  {t("doctor.appointmentDetail.actions.cannotChange", {
+                    status: currentStatus || emptyDash,
+                  })}
                 </div>
               )}
             </div>
@@ -287,15 +318,24 @@ export default function DoctorAppointmentDetailPage() {
             <div className="dadDivider" />
 
             <div className="dadSection">
-              <div className="dadSectionTitle">Visit notes</div>
+              <div className="dadSectionTitle">
+                {t("doctor.appointmentDetail.visitNotes.title")}
+              </div>
 
               <div className="dadQuick">
-                <Link className="dadLinkPill" to={`/doctor/visit-notes?appointment=${id}`}>
-                  Notes list
+                <Link
+                  className="dadLinkPill"
+                  to={`/doctor/visit-notes?appointment=${id}`}
+                >
+                  {t("doctor.appointmentDetail.visitNotes.list")}
                 </Link>
 
-                <button className="dadPrimary" onClick={openOrCreateNote} type="button">
-                  Open / Create note
+                <button
+                  className="dadPrimary"
+                  onClick={openOrCreateNote}
+                  type="button"
+                >
+                  {t("doctor.appointmentDetail.visitNotes.openOrCreate")}
                 </button>
               </div>
             </div>

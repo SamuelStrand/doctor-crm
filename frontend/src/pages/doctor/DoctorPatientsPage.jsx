@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { doctorApi } from "../../api/doctorApi";
 import { unwrapPaginated } from "../../utils/paginated";
+import { useTranslation } from "react-i18next";
 import "../../styles/DoctorPatientsPage.css";
 
 function useDebouncedValue(value, delay = 350) {
@@ -19,10 +20,12 @@ function initialsFromName(name) {
   const parts = s.split(/\s+/).filter(Boolean);
   const a = (parts[0]?.[0] || "").toUpperCase();
   const b = (parts[1]?.[0] || "").toUpperCase();
-  return (a + b) || a || "??";
+  return a + b || a || "??";
 }
 
 export default function DoctorPatientsPage() {
+  const { t } = useTranslation();
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
@@ -34,7 +37,6 @@ export default function DoctorPatientsPage() {
   const [err, setErr] = useState(null);
 
   // если твой бэк по умолчанию отдаёт 10 на страницу — всё идеально.
-  // если другое — поменяй тут.
   const PAGE_SIZE = 10;
 
   const params = useMemo(() => {
@@ -50,8 +52,7 @@ export default function DoctorPatientsPage() {
       const data = await doctorApi.listPatients(params);
       const { items, count } = unwrapPaginated(data);
 
-      // защита от "Invalid page": если мы на странице >1 и пришёл пустой список,
-      // откатываемся на 1 (или можно на page-1, но так надёжнее)
+      // защита от "Invalid page"
       if (page > 1 && (!items || items.length === 0) && count > 0) {
         setPage(1);
         return;
@@ -62,7 +63,6 @@ export default function DoctorPatientsPage() {
     } catch (e) {
       const detail = e?.response?.data?.detail || e?.message || "Error";
 
-      // если бэк реально вернул Invalid page — просто не показываем ошибку и уходим на 1
       if (String(detail).toLowerCase().includes("invalid page") && page > 1) {
         setPage(1);
         return;
@@ -79,7 +79,6 @@ export default function DoctorPatientsPage() {
     // eslint-disable-next-line
   }, [params]);
 
-  // при поиске всегда возвращаемся на 1 страницу
   useEffect(() => {
     setPage(1);
     // eslint-disable-next-line
@@ -98,11 +97,13 @@ export default function DoctorPatientsPage() {
   return (
     <div className="dp-page">
       <div className="dp-header">
-        <div className="dp-crumb">Doctor</div>
+        <div className="dp-crumb">{t("doctor.patients.breadcrumb")}</div>
 
         <div className="dp-titleRow">
-          <h1 className="dp-title">Клиенты</h1>
-          <div className="dp-totalPill">Всего: {count}</div>
+          <h1 className="dp-title">{t("doctor.patients.title")}</h1>
+          <div className="dp-totalPill">
+            {t("doctor.patients.total")}: {count}
+          </div>
         </div>
 
         <div className="dp-toolbar">
@@ -124,32 +125,32 @@ export default function DoctorPatientsPage() {
               className="dp-searchInput"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск клиента"
+              placeholder={t("doctor.patients.searchPlaceholder")}
             />
           </div>
 
           <button className="dp-ghostBtn" onClick={reset} type="button">
-            Сбросить
+            {t("doctor.patients.reset")}
           </button>
         </div>
       </div>
 
       {err && (
         <div className="dp-error">
-          <div className="dp-errorTitle">Ошибка</div>
+          <div className="dp-errorTitle">{t("doctor.patients.errorTitle")}</div>
           <pre className="dp-errorPre">{JSON.stringify(err, null, 2)}</pre>
         </div>
       )}
 
-      {loading && <div className="dp-loading">Загрузка…</div>}
+      {loading && <div className="dp-loading">{t("common.loading")}</div>}
 
       {!loading && (
         <>
           <div className="dp-grid">
             {items.map((p) => {
               const computed = `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim();
-              const name = p.full_name ?? p.name ?? (computed || "—");
-              const phone = p.phone ?? "—";
+              const name = p.full_name ?? p.name ?? (computed || t("common.emptyDash"));
+              const phone = p.phone ?? t("common.emptyDash");
 
               const initials = initialsFromName(name);
 
@@ -163,24 +164,27 @@ export default function DoctorPatientsPage() {
                         <div className="dp-name" title={name}>
                           {name}
                         </div>
-                        {/* если у тебя нет статуса "новый" — можно убрать */}
-                        <span className="dp-badge">Новый</span>
+
+                        {/* если у тебя нет статуса "новый" — можешь убрать */}
+                        <span className="dp-badge">{t("doctor.patients.badgeNew")}</span>
                       </div>
 
                       <div className="dp-sub">{phone}</div>
                     </div>
 
-                    <div className="dp-dots" title="Actions">⋮</div>
+                    <div className="dp-dots" title={t("doctor.patients.actionsTitle")}>
+                      ⋮
+                    </div>
                   </div>
 
                   <div className="dp-cardBody">
-                    <div className="dp-muted">Последние записи</div>
-                    <div className="dp-emptyBox">Записей нет</div>
+                    <div className="dp-muted">{t("doctor.patients.lastAppointments")}</div>
+                    <div className="dp-emptyBox">{t("doctor.patients.noAppointments")}</div>
                   </div>
 
                   <div className="dp-cardFooter">
                     <Link className="dp-openBtn" to={`/doctor/patients/${p.id}`}>
-                      Открыть
+                      {t("doctor.patients.open")}
                     </Link>
                   </div>
                 </div>
@@ -188,9 +192,7 @@ export default function DoctorPatientsPage() {
             })}
 
             {items.length === 0 && (
-              <div className="dp-emptyState">
-                Ничего не найдено
-              </div>
+              <div className="dp-emptyState">{t("doctor.patients.empty")}</div>
             )}
           </div>
 
@@ -199,8 +201,9 @@ export default function DoctorPatientsPage() {
               className="dp-pagerBtn"
               disabled={page <= 1 || loading}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
+              type="button"
             >
-              ‹ Previous
+              {t("doctor.patients.pager.prev")}
             </button>
 
             <div className="dp-pagePill">{page}</div>
@@ -209,8 +212,9 @@ export default function DoctorPatientsPage() {
               className="dp-pagerBtn"
               disabled={!hasNext || loading}
               onClick={() => setPage((p) => p + 1)}
+              type="button"
             >
-              Next ›
+              {t("doctor.patients.pager.next")}
             </button>
           </div>
         </>

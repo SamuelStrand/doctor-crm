@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { doctorApi } from "../../api/doctorApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import SearchInput from "../../components/common/SearchInput";
@@ -44,17 +45,6 @@ function fmtDT(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso);
   return `${ymd(d)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
-}
-function statusLabel(st) {
-  if (!st) return "—";
-  const map = {
-    SCHEDULED: "Scheduled",
-    CONFIRMED: "Confirmed",
-    COMPLETED: "Completed",
-    CANCELLED: "Cancelled",
-    NO_SHOW: "No show",
-  };
-  return map[st] || st;
 }
 
 function asText(v) {
@@ -112,11 +102,13 @@ function buildSearchHaystack(a) {
 }
 
 export default function DoctorAppointmentsPage() {
+  const { t } = useTranslation();
+
   const [page, setPage] = useState(1);
 
   const [status, setStatus] = useState("");
   const [dateFrom, setDateFrom] = useState(""); // YYYY-MM-DD (UI)
-  const [dateTo, setDateTo] = useState("");     // YYYY-MM-DD (UI)
+  const [dateTo, setDateTo] = useState(""); // YYYY-MM-DD (UI)
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
@@ -128,6 +120,11 @@ export default function DoctorAppointmentsPage() {
   const [actingId, setActingId] = useState(null);
 
   const [serverSearchOk, setServerSearchOk] = useState(true);
+
+  const statusLabel = (st) => {
+    if (!st) return t("common.emptyDash", "—");
+    return t(`doctor.appointments.status.${st}`, st);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -241,12 +238,12 @@ export default function DoctorAppointmentsPage() {
   return (
     <div className="daPage">
       <div className="daTop">
-        <div className="daBreadcrumb">Doctor</div>
+        <div className="daBreadcrumb">{t("doctor.appointments.breadcrumb")}</div>
 
         <div className="daHeadRow">
-          <h1 className="daTitle">Appointments</h1>
+          <h1 className="daTitle">{t("doctor.appointments.title")}</h1>
           <div className="daMeta">
-            Total: <b>{count}</b>
+            {t("doctor.appointments.total")}: <b>{count}</b>
           </div>
         </div>
 
@@ -259,12 +256,12 @@ export default function DoctorAppointmentsPage() {
                 setPage(1);
                 setSearch(value);
               }}
-              placeholder="Search (patient, doctor, etc.)"
+              placeholder={t("doctor.appointments.searchPlaceholder")}
             />
           </div>
 
           <label className="daChip">
-            <span>Status</span>
+            <span>{t("doctor.appointments.filters.status")}</span>
             <select
               className="daSelect"
               value={status}
@@ -273,17 +270,17 @@ export default function DoctorAppointmentsPage() {
                 setStatus(e.target.value);
               }}
             >
-              <option value="">All</option>
-              <option value="SCHEDULED">SCHEDULED</option>
-              <option value="CONFIRMED">CONFIRMED</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="CANCELLED">CANCELLED</option>
-              <option value="NO_SHOW">NO_SHOW</option>
+              <option value="">{t("doctor.appointments.filters.all")}</option>
+              <option value="SCHEDULED">{t("doctor.appointments.status.SCHEDULED")}</option>
+              <option value="CONFIRMED">{t("doctor.appointments.status.CONFIRMED")}</option>
+              <option value="COMPLETED">{t("doctor.appointments.status.COMPLETED")}</option>
+              <option value="CANCELLED">{t("doctor.appointments.status.CANCELLED")}</option>
+              <option value="NO_SHOW">{t("doctor.appointments.status.NO_SHOW")}</option>
             </select>
           </label>
 
           <label className="daChip">
-            <span>From</span>
+            <span>{t("doctor.appointments.filters.from")}</span>
             <input
               className="daInput"
               type="date"
@@ -296,7 +293,7 @@ export default function DoctorAppointmentsPage() {
           </label>
 
           <label className="daChip">
-            <span>To</span>
+            <span>{t("doctor.appointments.filters.to")}</span>
             <input
               className="daInput"
               type="date"
@@ -309,17 +306,17 @@ export default function DoctorAppointmentsPage() {
           </label>
 
           <button className="daGhost" onClick={reset} type="button">
-            Reset
+            {t("doctor.appointments.reset")}
           </button>
 
           {!serverSearchOk && debouncedSearch.trim() && (
-            <div className="daHintPill" title="Server search not available. Using local search on loaded page.">
-              Local search
+            <div className="daHintPill" title={t("doctor.appointments.localSearchHintTitle")}>
+              {t("doctor.appointments.localSearch")}
             </div>
           )}
         </div>
 
-        {loading && <div className="daLoading">Loading…</div>}
+        {loading && <div className="daLoading">{t("common.loading")}</div>}
 
         {err && (
           <div className="daError">
@@ -330,19 +327,19 @@ export default function DoctorAppointmentsPage() {
 
       {!loading && (
         <div className="daCard">
-          <div className="daCardTitle">List</div>
+          <div className="daCardTitle">{t("doctor.appointments.listTitle")}</div>
 
           <div className="daTableWrap">
             <table className="daTable">
               <thead>
                 <tr>
-                  <th className="daTh">ID</th>
-                  <th className="daTh">Start</th>
-                  <th className="daTh">End</th>
-                  <th className="daTh">Status</th>
-                  <th className="daTh">Patient</th>
-                  <th className="daTh">Doctor</th>
-                  <th className="daTh">Actions</th>
+                  <th className="daTh">{t("doctor.appointments.table.id")}</th>
+                  <th className="daTh">{t("doctor.appointments.table.start")}</th>
+                  <th className="daTh">{t("doctor.appointments.table.end")}</th>
+                  <th className="daTh">{t("doctor.appointments.table.status")}</th>
+                  <th className="daTh">{t("doctor.appointments.table.patient")}</th>
+                  <th className="daTh">{t("doctor.appointments.table.doctor")}</th>
+                  <th className="daTh">{t("doctor.appointments.table.actions")}</th>
                 </tr>
               </thead>
 
@@ -356,14 +353,14 @@ export default function DoctorAppointmentsPage() {
                       <span className={`daBadge ${a.status || ""}`}>{statusLabel(a.status)}</span>
                     </td>
                     <td className="daTd daEll">
-                      {a.patient_name ?? a.patient?.full_name ?? a.patient ?? "—"}
+                      {a.patient_name ?? a.patient?.full_name ?? a.patient ?? t("common.emptyDash", "—")}
                     </td>
                     <td className="daTd daEll">
-                      {a.doctor_name ?? a.doctor?.full_name ?? a.doctor ?? "—"}
+                      {a.doctor_name ?? a.doctor?.full_name ?? a.doctor ?? t("common.emptyDash", "—")}
                     </td>
                     <td className="daTd daActions">
                       <Link className="daLink" to={`/doctor/appointments/${a.id}`}>
-                        Open
+                        {t("doctor.appointments.actions.open")}
                       </Link>
 
                       {a.status === "SCHEDULED" && (
@@ -373,7 +370,9 @@ export default function DoctorAppointmentsPage() {
                           disabled={actingId === a.id}
                           type="button"
                         >
-                          {actingId === a.id ? "Confirming…" : "Confirm"}
+                          {actingId === a.id
+                            ? t("doctor.appointments.actions.confirming")
+                            : t("doctor.appointments.actions.confirm")}
                         </button>
                       )}
                     </td>
@@ -383,7 +382,7 @@ export default function DoctorAppointmentsPage() {
                 {filtered.length === 0 && (
                   <tr>
                     <td className="daTd daEmpty" colSpan="7">
-                      No appointments
+                      {t("doctor.appointments.empty")}
                     </td>
                   </tr>
                 )}
@@ -398,10 +397,10 @@ export default function DoctorAppointmentsPage() {
               onClick={() => setPage((p) => p - 1)}
               type="button"
             >
-              Prev
+              {t("doctor.appointments.pager.prev")}
             </button>
 
-            <span className="daPageNum">Page {page}</span>
+            <span className="daPageNum">{t("doctor.appointments.pager.page", { page })}</span>
 
             <button
               className="daGhost"
@@ -409,11 +408,11 @@ export default function DoctorAppointmentsPage() {
               onClick={() => setPage((p) => p + 1)}
               type="button"
             >
-              Next
+              {t("doctor.appointments.pager.next")}
             </button>
 
             <span className="daPagerMeta">
-              Showing: <b>{filtered.length}</b>
+              {t("doctor.appointments.pager.showing")}: <b>{filtered.length}</b>
             </span>
           </div>
         </div>

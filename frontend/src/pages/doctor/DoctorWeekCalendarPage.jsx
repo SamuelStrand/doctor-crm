@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { doctorApi } from "../../api/doctorApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import "../../styles/DoctorWeekCalendarPage.css";
@@ -46,7 +47,6 @@ function minutesFromISO(iso) {
 }
 
 function pickDoctorId(a) {
-  // doctor может быть числом или объектом
   const d = a?.doctor;
   if (typeof d === "number") return d;
   if (typeof d === "string") return d;
@@ -92,24 +92,26 @@ function statusTone(status) {
 }
 
 export default function DoctorWeekCalendarPage() {
+  const { t } = useTranslation();
+
   const [date, setDate] = useState(() => toInputDate(new Date()));
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
   const [items, setItems] = useState([]);
 
-  // можно потом подключить специализации/фильтры, пока просто UI
+  // пока просто UI
   const [spec, setSpec] = useState("ALL");
 
   const dayObj = useMemo(() => fromInputDate(date) ?? startOfDay(new Date()), [date]);
 
   // рабочие часы
-  const DAY_START = 9 * 60;  // 09:00
-  const DAY_END = 18 * 60;   // 18:00
-  const STEP = 30;           // 30 мин
+  const DAY_START = 9 * 60; // 09:00
+  const DAY_END = 18 * 60; // 18:00
+  const STEP = 30; // 30 мин
 
   const slots = useMemo(() => {
     const arr = [];
-    for (let t = DAY_START; t < DAY_END; t += STEP) arr.push(t);
+    for (let tt = DAY_START; tt < DAY_END; tt += STEP) arr.push(tt);
     return arr;
   }, []);
 
@@ -117,15 +119,19 @@ export default function DoctorWeekCalendarPage() {
     setLoading(true);
     setErr(null);
     try {
+      // ВАЖНО: как и раньше — если бэк ждёт ISO DateTime, поменяй на:
+      // date_from: `${ymd(dayObj)}T00:00:00Z`, date_to: `${ymd(addDays(dayObj,1))}T00:00:00Z`
       const from = ymd(dayObj);
       const to = ymd(addDays(dayObj, 1));
+
       const data = await doctorApi.listAppointments({
         date_from: from,
         date_to: to,
         page_size: 500,
       });
-      const { items } = unwrapPaginated(data);
-      setItems(items);
+
+      const { items: got } = unwrapPaginated(data);
+      setItems(got);
     } catch (e) {
       setErr(e?.response?.data ?? { detail: e.message });
       setItems([]);
@@ -139,7 +145,6 @@ export default function DoctorWeekCalendarPage() {
     // eslint-disable-next-line
   }, [date]);
 
-  // список докторов (по данным записей этого дня)
   const doctors = useMemo(() => {
     const map = new Map();
     for (const a of items) {
@@ -155,25 +160,19 @@ export default function DoctorWeekCalendarPage() {
     return Array.from(map.values());
   }, [items]);
 
-  // фильтр по специализации (если у тебя есть поле specialization на doctor)
   const visibleDoctors = useMemo(() => {
     if (spec === "ALL") return doctors;
-    // если появится specialization — можно фильтровать тут
     return doctors;
   }, [doctors, spec]);
 
-  // индекс appointment по (doctorId, slotTime)
   const grid = useMemo(() => {
-    const g = new Map(); // key: `${docId}|${slot}` => appointment
+    const g = new Map(); // `${docId}|${slot}` -> appt
     for (const a of items) {
       const docId = pickDoctorId(a);
       const startM = minutesFromISO(a.start_at);
       if (startM == null) continue;
 
-      // кладём на ближайший слот (например 10:10 -> 10:00) чтобы ячейка не была пустой
       const slot = Math.floor(startM / STEP) * STEP;
-
-      // если вдруг коллизия
       const key = `${docId}|${slot}`;
       if (!g.has(key)) g.set(key, a);
     }
@@ -184,31 +183,40 @@ export default function DoctorWeekCalendarPage() {
   const nextDay = () => setDate(toInputDate(addDays(dayObj, 1)));
   const today = () => setDate(toInputDate(new Date()));
 
+  const formatDay = (d) =>
+    new Date(d).toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  const statusLabel = (st) =>
+    t(`doctor.week.status.${String(st || "").toUpperCase()}`, { defaultValue: String(st || "—") });
+
   return (
     <div className="djPage" style={{ "--accent": ACCENT }}>
       <div className="djTop">
-        <div className="djBreadcrumb">Журнал</div>
-        <h1 className="djTitle">Журнал</h1>
+        <div className="djBreadcrumb">{t("doctor.week.breadcrumb", { defaultValue: "Журнал" })}</div>
+        <h1 className="djTitle">{t("doctor.week.title", { defaultValue: "Журнал" })}</h1>
 
         <div className="djToolbar">
           <div className="djSelectPill">
             <span className="djPillIcon">⚕</span>
             <select value={spec} onChange={(e) => setSpec(e.target.value)}>
-              <option value="ALL">Все специальности</option>
-              {/* позже можно подставить реальные */}
+              <option value="ALL">
+                {t("doctor.week.spec.all", { defaultValue: "Все специальности" })}
+              </option>
             </select>
           </div>
 
           <div className="djDateControls">
-            <button className="djNavBtn" onClick={prevDay} type="button">‹</button>
+            <button className="djNavBtn" onClick={prevDay} type="button" aria-label="prev">
+              ‹
+            </button>
 
             <div className="djDate">
-              <span className="djDateText">
-                {new Date(dayObj).toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" })}
-              </span>
+              <span className="djDateText">{formatDay(dayObj)}</span>
             </div>
 
-            <button className="djNavBtn" onClick={nextDay} type="button">›</button>
+            <button className="djNavBtn" onClick={nextDay} type="button" aria-label="next">
+              ›
+            </button>
 
             <input
               className="djDateInput"
@@ -218,10 +226,10 @@ export default function DoctorWeekCalendarPage() {
               aria-label="date"
             />
 
-            <button className="djGhostBtn" onClick={today} type="button">Сегодня</button>
+            <button className="djGhostBtn" onClick={today} type="button">
+              {t("doctor.week.today", { defaultValue: "Сегодня" })}
+            </button>
           </div>
-
-          
         </div>
 
         {err && (
@@ -232,7 +240,7 @@ export default function DoctorWeekCalendarPage() {
       </div>
 
       <div className="djBoard">
-        {loading && <div className="djLoading">Loading…</div>}
+        {loading && <div className="djLoading">{t("common.loading", { defaultValue: "Loading…" })}</div>}
 
         {!loading && (
           <div className="djTableWrap">
@@ -243,12 +251,14 @@ export default function DoctorWeekCalendarPage() {
               }}
             >
               {/* header row */}
-              <div className="djHeadCell djTimeHead">График</div>
+              <div className="djHeadCell djTimeHead">
+                {t("doctor.week.table.head", { defaultValue: "График" })}
+              </div>
 
               {visibleDoctors.length === 0 ? (
                 <div className="djHeadCell">
-                  <div className="djDocName">Нет данных</div>
-                  <div className="djDocSub">На выбранный день нет записей</div>
+                  <div className="djDocName">{t("doctor.week.noData", { defaultValue: "Нет данных" })}</div>
+                  <div className="djDocSub">{t("doctor.week.noAppts", { defaultValue: "На выбранный день нет записей" })}</div>
                 </div>
               ) : (
                 visibleDoctors.map((d) => (
@@ -257,7 +267,7 @@ export default function DoctorWeekCalendarPage() {
                       <div className="djAvatar">{(d.name || "D")[0]?.toUpperCase()}</div>
                       <div>
                         <div className="djDocName">{d.name}</div>
-                        <div className="djDocSub">{d.phone ? d.phone : "—"}</div>
+                        <div className="djDocSub">{d.phone ? d.phone : t("common.emptyDash", { defaultValue: "—" })}</div>
                       </div>
                     </div>
                   </div>
@@ -265,21 +275,24 @@ export default function DoctorWeekCalendarPage() {
               )}
 
               {/* time rows */}
-              {slots.map((t) => (
-                <React.Fragment key={t}>
-                  <div className="djTimeCell">{timeLabelFromMinutes(t)}</div>
+              {slots.map((tSlot) => (
+                <React.Fragment key={tSlot}>
+                  <div className="djTimeCell">{timeLabelFromMinutes(tSlot)}</div>
 
                   {visibleDoctors.length === 0 ? (
                     <div className="djCell djEmptyCell">
-                      <span className="djAvailable">—</span>
+                      <span className="djAvailable">{t("common.emptyDash", { defaultValue: "—" })}</span>
                     </div>
                   ) : (
                     visibleDoctors.map((doc) => {
-                      const appt = grid.get(`${doc.id}|${t}`);
+                      const appt = grid.get(`${doc.id}|${tSlot}`);
+
                       if (!appt) {
                         return (
-                          <div key={`${doc.id}|${t}`} className="djCell djEmptyCell">
-                            <span className="djAvailable">Доступно</span>
+                          <div key={`${doc.id}|${tSlot}`} className="djCell djEmptyCell">
+                            <span className="djAvailable">
+                              {t("doctor.week.free", { defaultValue: "Доступно" })}
+                            </span>
                           </div>
                         );
                       }
@@ -289,19 +302,19 @@ export default function DoctorWeekCalendarPage() {
                       const tone = statusTone(appt.status);
 
                       return (
-                        <div key={`${doc.id}|${t}`} className={`djCell djBusy ${tone}`}>
+                        <div key={`${doc.id}|${tSlot}`} className={`djCell djBusy ${tone}`}>
                           <Link to={`/doctor/appointments/${appt.id}`} className="djAppt">
                             <div className="djApptTop">
                               <div className="djApptName">{patient}</div>
-                              <div className={`djStatus ${tone}`}>{appt.status}</div>
+                              <div className={`djStatus ${tone}`}>{statusLabel(appt.status)}</div>
                             </div>
 
                             <div className="djApptSub">
-                              {service || appt.reason || "—"}
+                              {service || appt.reason || t("common.emptyDash", { defaultValue: "—" })}
                             </div>
 
                             <div className="djApptTime">
-                              {timeLabelFromMinutes(t)} • #{appt.id}
+                              {timeLabelFromMinutes(tSlot)} • #{appt.id}
                             </div>
                           </Link>
                         </div>

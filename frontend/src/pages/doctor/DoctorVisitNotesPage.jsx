@@ -2,9 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { doctorApi } from "../../api/doctorApi";
 import { unwrapPaginated } from "../../utils/paginated";
 import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "../../styles/DoctorVisitNotesPage.css";
 
 export default function DoctorVisitNotesPage() {
+  const { t } = useTranslation();
+
   const [sp] = useSearchParams();
   const prefillAppointment = sp.get("appointment") || "";
 
@@ -96,19 +99,19 @@ export default function DoctorVisitNotesPage() {
     setErr(null);
 
     if (!appointmentIdNum) {
-      setErr({ appointment: ["Enter valid Appointment ID"] });
+      setErr({ appointment: [t("doctor.visitNotes.errors.invalidAppointment")] });
       return;
     }
     if (!noteText.trim()) {
-      setErr({ note_text: ["This field is required."] });
+      setErr({ note_text: [t("doctor.visitNotes.errors.noteRequired")] });
       return;
     }
 
-    const patientFromAppointment = appointmentInfo?.patient ?? appointmentInfo?.patient_id ?? null;
+    const patientFromAppointment =
+      appointmentInfo?.patient ?? appointmentInfo?.patient_id ?? null;
+
     if (!patientFromAppointment) {
-      setErr({
-        patient: ["Selected appointment has no patient. Pick an appointment that has a patient."],
-      });
+      setErr({ patient: [t("doctor.visitNotes.errors.noPatientOnAppointment")] });
       return;
     }
 
@@ -132,19 +135,23 @@ export default function DoctorVisitNotesPage() {
   const patientLabel =
     appointmentInfo?.patient_name ||
     appointmentInfo?.patient?.full_name ||
-    (appointmentInfo?.patient ? `Patient #${appointmentInfo.patient}` : null);
+    (appointmentInfo?.patient
+      ? `${t("doctor.visitNotes.patientPrefix")} #${appointmentInfo.patient}`
+      : null);
 
-  const canNext = items.length > 0 && page * items.length < count; // грубо, но лучше чем всегда разрешать
+  const canNext = items.length > 0 && page * items.length < count;
   const canPrev = page > 1;
 
   return (
     <div className="vnPage">
       <div className="vnTop">
-        <div className="vnBreadcrumb">Doctor</div>
+        <div className="vnBreadcrumb">{t("doctor.visitNotes.breadcrumb")}</div>
 
         <div className="vnHeaderRow">
-          <h1 className="vnTitle">Visit notes</h1>
-          <div className="vnPill">Total: {count}</div>
+          <h1 className="vnTitle">{t("doctor.visitNotes.title")}</h1>
+          <div className="vnPill">
+            {t("doctor.visitNotes.total")}: {count}
+          </div>
         </div>
 
         {err && (
@@ -157,51 +164,60 @@ export default function DoctorVisitNotesPage() {
       <div className="vnLayout">
         {/* LEFT: create form */}
         <div className="vnCard">
-          <div className="vnCardTitle">Create note</div>
+          <div className="vnCardTitle">{t("doctor.visitNotes.create.title")}</div>
 
           <form onSubmit={create} className="vnForm">
             <div className="vnField">
-              <label className="vnLabel">Appointment ID</label>
+              <label className="vnLabel">{t("doctor.visitNotes.fields.appointmentId")}</label>
               <input
                 className="vnInput"
                 value={appointment}
                 onChange={(e) => setAppointment(e.target.value)}
-                placeholder="например 21"
+                placeholder={t("doctor.visitNotes.placeholders.appointmentId")}
                 inputMode="numeric"
               />
-              
             </div>
 
             {appointmentIdNum && (
               <div className="vnInfo">
                 <div className="vnInfoRow">
-                  <span className="vnInfoK">Appointment</span>
+                  <span className="vnInfoK">{t("doctor.visitNotes.info.appointment")}</span>
                   <span className="vnInfoV">#{appointmentIdNum}</span>
                 </div>
                 <div className="vnInfoRow">
-                  <span className="vnInfoK">Patient</span>
-                  <span className="vnInfoV">{patientLabel ?? "—"}</span>
+                  <span className="vnInfoK">{t("doctor.visitNotes.info.patient")}</span>
+                  <span className="vnInfoV">
+                    {patientLabel ?? t("common.emptyDash")}
+                  </span>
                 </div>
               </div>
             )}
 
             <div className="vnField">
-              <label className="vnLabel">Note text</label>
+              <label className="vnLabel">{t("doctor.visitNotes.fields.noteText")}</label>
               <textarea
                 className="vnTextarea"
                 rows={5}
                 value={noteText}
                 onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Напиши заметку…"
+                placeholder={t("doctor.visitNotes.placeholders.noteText")}
               />
             </div>
 
             <div className="vnActions">
               <button className="vnBtnPrimary" type="submit" disabled={creating}>
-                {creating ? "Creating..." : "Create note"}
+                {creating
+                  ? t("doctor.visitNotes.actions.creating")
+                  : t("doctor.visitNotes.actions.create")}
               </button>
-              <button className="vnBtnGhost" type="button" onClick={reset} disabled={creating}>
-                Reset
+
+              <button
+                className="vnBtnGhost"
+                type="button"
+                onClick={reset}
+                disabled={creating}
+              >
+                {t("doctor.visitNotes.actions.reset")}
               </button>
             </div>
           </form>
@@ -209,24 +225,27 @@ export default function DoctorVisitNotesPage() {
 
         {/* RIGHT: table */}
         <div className="vnCard vnCardWide">
-          <div className="vnCardTitle">Notes list</div>
+          <div className="vnCardTitle">{t("doctor.visitNotes.list.title")}</div>
 
-          {loading && <div className="vnLoading">Loading…</div>}
+          {loading && <div className="vnLoading">{t("common.loading")}</div>}
 
-          {!loading && items.length === 0 && <div className="vnEmpty">No notes</div>}
+          {!loading && items.length === 0 && (
+            <div className="vnEmpty">{t("doctor.visitNotes.list.empty")}</div>
+          )}
 
           {!loading && items.length > 0 && (
             <div className="vnTableWrap">
               <table className="vnTable">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Appointment</th>
-                    <th>Patient</th>
-                    <th>Created</th>
+                    <th>{t("doctor.visitNotes.table.id")}</th>
+                    <th>{t("doctor.visitNotes.table.appointment")}</th>
+                    <th>{t("doctor.visitNotes.table.patient")}</th>
+                    <th>{t("doctor.visitNotes.table.created")}</th>
                     <th></th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {items.map((n) => (
                     <tr key={n.id}>
@@ -236,7 +255,7 @@ export default function DoctorVisitNotesPage() {
                       <td className="vnDim">{n.created_at ?? "-"}</td>
                       <td className="vnRowActions">
                         <Link className="vnLinkBtn" to={`/doctor/visit-notes/${n.id}`}>
-                          Open
+                          {t("doctor.visitNotes.actions.open")}
                         </Link>
                       </td>
                     </tr>
@@ -247,14 +266,26 @@ export default function DoctorVisitNotesPage() {
           )}
 
           <div className="vnPager">
-            <button className="vnBtnGhostSm" disabled={!canPrev || loading} onClick={() => setPage((p) => p - 1)}>
-              Prev
+            <button
+              className="vnBtnGhostSm"
+              disabled={!canPrev || loading}
+              onClick={() => setPage((p) => p - 1)}
+              type="button"
+            >
+              {t("doctor.visitNotes.pager.prev")}
             </button>
+
             <div className="vnPagerMid">
               <span className="vnPagerBadge">{page}</span>
             </div>
-            <button className="vnBtnGhostSm" disabled={!canNext || loading} onClick={() => setPage((p) => p + 1)}>
-              Next
+
+            <button
+              className="vnBtnGhostSm"
+              disabled={!canNext || loading}
+              onClick={() => setPage((p) => p + 1)}
+              type="button"
+            >
+              {t("doctor.visitNotes.pager.next")}
             </button>
           </div>
         </div>

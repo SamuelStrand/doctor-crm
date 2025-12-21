@@ -1,20 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { doctorApi } from "../../api/doctorApi";
 import "../../styles/DoctorSchedulePage.css";
-
-const WEEKDAYS = [
-  { value: 0, label: "Mon" },
-  { value: 1, label: "Tue" },
-  { value: 2, label: "Wed" },
-  { value: 3, label: "Thu" },
-  { value: 4, label: "Fri" },
-  { value: 5, label: "Sat" },
-  { value: 6, label: "Sun" },
-];
-
-function weekdayLabel(v) {
-  return WEEKDAYS.find((x) => x.value === Number(v))?.label ?? String(v);
-}
 
 function parseHHMMToMinutes(hhmm) {
   if (!hhmm) return 0;
@@ -27,6 +14,24 @@ function fmtHM(hhmm) {
 }
 
 export default function DoctorSchedulePage() {
+  const { t } = useTranslation();
+
+  const WEEKDAYS = useMemo(
+    () => [
+      { value: 0, label: t("doctor.schedule.weekdays.mon") },
+      { value: 1, label: t("doctor.schedule.weekdays.tue") },
+      { value: 2, label: t("doctor.schedule.weekdays.wed") },
+      { value: 3, label: t("doctor.schedule.weekdays.thu") },
+      { value: 4, label: t("doctor.schedule.weekdays.fri") },
+      { value: 5, label: t("doctor.schedule.weekdays.sat") },
+      { value: 6, label: t("doctor.schedule.weekdays.sun") },
+    ],
+    [t]
+  );
+
+  const weekdayLabel = (v) =>
+    WEEKDAYS.find((x) => x.value === Number(v))?.label ?? String(v);
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
@@ -88,8 +93,8 @@ export default function DoctorSchedulePage() {
   const validate = () => {
     const st = parseHHMMToMinutes(startTime);
     const en = parseHHMMToMinutes(endTime);
-    if (en <= st) return "End time must be later than start time.";
-    if (Number(slotMinutes) < 5) return "Slot minutes must be >= 5.";
+    if (en <= st) return t("doctor.schedule.validation.endLater");
+    if (Number(slotMinutes) < 5) return t("doctor.schedule.validation.slotMin");
     return null;
   };
 
@@ -126,16 +131,8 @@ export default function DoctorSchedulePage() {
     }
   };
 
-  const onEdit = (row) => {
-    setEditingId(row.id);
-    setWeekday(Number(row.weekday));
-    setStartTime(String(row.start_time).slice(0, 5));
-    setEndTime(String(row.end_time).slice(0, 5));
-    setSlotMinutes(Number(row.slot_minutes ?? 30));
-  };
-
   const onDelete = async (id) => {
-    if (!confirm("Delete this schedule interval?")) return;
+    if (!confirm(t("doctor.schedule.confirmDelete"))) return;
     setErr(null);
     try {
       await doctorApi.deleteSchedule(id);
@@ -149,11 +146,13 @@ export default function DoctorSchedulePage() {
   return (
     <div className="dsPage">
       <div className="dsTop">
-        <div className="dsBreadcrumb">Doctor</div>
+        <div className="dsBreadcrumb">{t("doctor.schedule.breadcrumb")}</div>
 
         <div className="dsHeaderRow">
-          <h1 className="dsTitle">Schedule</h1>
-          <div className="dsPill">Total: {totalIntervals}</div>
+          <h1 className="dsTitle">{t("doctor.schedule.title")}</h1>
+          <div className="dsPill">
+            {t("doctor.schedule.total")}: {totalIntervals}
+          </div>
         </div>
 
         {err && (
@@ -166,12 +165,18 @@ export default function DoctorSchedulePage() {
       <div className="dsLayout">
         {/* LEFT: form card */}
         <div className="dsCard">
-          <div className="dsCardTitle">{editingId ? "Edit interval" : "Add interval"}</div>
+          <div className="dsCardTitle">
+            {editingId ? t("doctor.schedule.form.editTitle") : t("doctor.schedule.form.addTitle")}
+          </div>
 
           <form onSubmit={submit} className="dsForm">
             <div className="dsField">
-              <label className="dsLabel">Weekday</label>
-              <select className="dsSelect" value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>
+              <label className="dsLabel">{t("doctor.schedule.form.weekday")}</label>
+              <select
+                className="dsSelect"
+                value={weekday}
+                onChange={(e) => setWeekday(Number(e.target.value))}
+              >
                 {WEEKDAYS.map((d) => (
                   <option key={d.value} value={d.value}>
                     {d.label}
@@ -182,17 +187,27 @@ export default function DoctorSchedulePage() {
 
             <div className="dsGrid2">
               <div className="dsField">
-                <label className="dsLabel">Start</label>
-                <input className="dsInput" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                <label className="dsLabel">{t("doctor.schedule.form.start")}</label>
+                <input
+                  className="dsInput"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
               </div>
               <div className="dsField">
-                <label className="dsLabel">End</label>
-                <input className="dsInput" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                <label className="dsLabel">{t("doctor.schedule.form.end")}</label>
+                <input
+                  className="dsInput"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
               </div>
             </div>
 
             <div className="dsField">
-              <label className="dsLabel">Slot minutes</label>
+              <label className="dsLabel">{t("doctor.schedule.form.slotMinutes")}</label>
               <input
                 className="dsInput"
                 type="number"
@@ -202,70 +217,78 @@ export default function DoctorSchedulePage() {
                 onChange={(e) => setSlotMinutes(e.target.value)}
                 placeholder="30"
               />
-              <div className="dsHint">Example: 10 / 15 / 20 / 30</div>
+              <div className="dsHint">{t("doctor.schedule.form.slotHint")}</div>
             </div>
 
             <div className="dsActions">
               <button className="dsBtnPrimary" type="submit" disabled={saving}>
-                {saving ? "Saving..." : editingId ? "Save" : "Create"}
+                {saving
+                  ? t("doctor.schedule.form.saving")
+                  : editingId
+                  ? t("doctor.schedule.form.save")
+                  : t("doctor.schedule.form.create")}
               </button>
-              {editingId ? (
-                <button className="dsBtnGhost" type="button" onClick={resetForm} disabled={saving}>
-                  Cancel
-                </button>
-              ) : (
-                <button className="dsBtnGhost" type="button" onClick={resetForm} disabled={saving}>
-                  Reset
-                </button>
-              )}
+
+              <button
+                className="dsBtnGhost"
+                type="button"
+                onClick={resetForm}
+                disabled={saving}
+              >
+                {editingId ? t("doctor.schedule.form.cancel") : t("doctor.schedule.form.reset")}
+              </button>
             </div>
           </form>
         </div>
 
         {/* RIGHT: table card */}
         <div className="dsCard dsCardWide">
-          <div className="dsCardTitle">Intervals</div>
+          <div className="dsCardTitle">{t("doctor.schedule.table.title")}</div>
 
-          {loading && <div className="dsLoading">Loading…</div>}
+          {loading && <div className="dsLoading">{t("common.loading")}</div>}
 
-          {!loading && items.length === 0 && <div className="dsEmpty">No schedule yet</div>}
+          {!loading && items.length === 0 && (
+            <div className="dsEmpty">{t("doctor.schedule.empty")}</div>
+          )}
 
           {!loading && items.length > 0 && (
             <div className="dsTableWrap">
               <table className="dsTable">
                 <thead>
                   <tr>
-                    <th>Weekday</th>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Slot</th>
+                    <th>{t("doctor.schedule.table.weekday")}</th>
+                    <th>{t("doctor.schedule.table.start")}</th>
+                    <th>{t("doctor.schedule.table.end")}</th>
+                    <th>{t("doctor.schedule.table.slot")}</th>
                     <th></th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {Array.from(byDay.entries()).flatMap(([w, list]) =>
-                    list.map((s) => {
-                      const isEditing = editingId === s.id;
-                      return (
-                        <tr key={s.id} className={isEditing ? "isEditing" : ""}>
-                          <td>
-                            <span className="dsDayPill">{weekdayLabel(w)}</span>
-                          </td>
-                          <td>{fmtHM(s.start_time)}</td>
-                          <td>{fmtHM(s.end_time)}</td>
-                          <td>
-                            <span className="dsSlotPill">{s.slot_minutes} min</span>
-                          </td>
-                          <td className="dsRowActions">
-                            
-                            <button className="dsBtnSmallDanger" onClick={() => onDelete(s.id)}>
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
+                    list.map((s) => (
+                      <tr key={s.id} className={editingId === s.id ? "isEditing" : ""}>
+                        <td>
+                          <span className="dsDayPill">{weekdayLabel(w)}</span>
+                        </td>
+                        <td>{fmtHM(s.start_time)}</td>
+                        <td>{fmtHM(s.end_time)}</td>
+                        <td>
+                          <span className="dsSlotPill">
+                            {s.slot_minutes} {t("doctor.schedule.table.min")}
+                          </span>
+                        </td>
+                        <td className="dsRowActions">
+                          <button
+                            className="dsBtnSmallDanger"
+                            onClick={() => onDelete(s.id)}
+                            type="button"
+                          >
+                            {t("doctor.schedule.actions.delete")}
+                          </button>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>

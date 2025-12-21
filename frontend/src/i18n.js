@@ -14,6 +14,7 @@ const resources = {
         search: "Поиск",
         logout: "Выйти",
         language: "Язык",
+        emptyDash: "—",
       },
 
       nav: {
@@ -231,7 +232,7 @@ const resources = {
             active: "Активен (Онлайн)",
 
             fullNameRequired: "ФИО (обязательное на бэке)",
-            fullNamePlaceholder: " ",
+            fullNamePlaceholder: "Если оставишь пустым — full_name НЕ отправим",
 
             room: "Комната",
             roomNotSelected: "— не выбрано —",
@@ -385,7 +386,7 @@ const resources = {
           },
         },
 
-        // ✅ AdminRoomsPage (NEW)
+        // ✅ AdminRoomsPage
         rooms: {
           breadcrumb: "Кабинеты",
           title: "Кабинеты",
@@ -396,7 +397,6 @@ const resources = {
 
           none: "—",
           floorLabel: "Этаж {{floor}}",
-
           appointment: "Запись",
 
           legend: {
@@ -451,7 +451,7 @@ const resources = {
           },
         },
 
-        // ✅ AdminPatientsPage (NEW)
+        // ✅ AdminPatientsPage
         patients: {
           breadcrumb: "Клиенты",
           title: "Клиенты",
@@ -514,6 +514,409 @@ const resources = {
         },
       },
 
+      // ✅ Doctor pages
+      doctor: {
+        appointments: {
+          breadcrumb: "Доктор",
+          title: "Записи",
+          total: "Всего",
+          searchPlaceholder: "Поиск (пациент, доктор и т.д.)",
+
+          filters: {
+            status: "Статус",
+            all: "Все",
+            from: "С",
+            to: "По",
+          },
+
+          reset: "Сбросить",
+
+          localSearch: "Локальный поиск",
+          localSearchHintTitle:
+            "Поиск на сервере недоступен. Используем локальный поиск по загруженной странице.",
+
+          listTitle: "Список",
+
+          table: {
+            id: "ID",
+            start: "Начало",
+            end: "Конец",
+            status: "Статус",
+            patient: "Пациент",
+            doctor: "Врач",
+            actions: "Действия",
+          },
+
+          actions: {
+            open: "Открыть",
+            confirm: "Подтвердить",
+            confirming: "Подтверждаем…",
+          },
+
+          empty: "Записей нет",
+
+          pager: {
+            prev: "Назад",
+            next: "Вперёд",
+            page: "Стр. {{page}}",
+            showing: "Показано",
+          },
+
+          status: {
+            SCHEDULED: "Запланировано",
+            CONFIRMED: "Подтверждено",
+            COMPLETED: "Завершено",
+            CANCELLED: "Отменено",
+            NO_SHOW: "Не пришёл",
+          },
+        },
+        schedule: {
+        breadcrumb: "Доктор",
+        title: "Расписание",
+        total: "Всего",
+
+        confirmDelete: "Удалить этот интервал расписания?",
+
+        empty: "Расписание ещё не задано",
+
+        weekdays: {
+            mon: "Пн",
+            tue: "Вт",
+            wed: "Ср",
+            thu: "Чт",
+            fri: "Пт",
+            sat: "Сб",
+            sun: "Вс",
+        },
+
+        form: {
+            addTitle: "Добавить интервал",
+            editTitle: "Редактировать интервал",
+
+            weekday: "День недели",
+            start: "Начало",
+            end: "Конец",
+            slotMinutes: "Длительность слота (мин)",
+            slotHint: "Например: 10 / 15 / 20 / 30",
+
+            create: "Создать",
+            save: "Сохранить",
+            saving: "Сохраняем...",
+            cancel: "Отмена",
+            reset: "Сбросить",
+        },
+
+        validation: {
+            endLater: "Время окончания должно быть позже времени начала.",
+            slotMin: "Длительность слота должна быть ≥ 5 минут.",
+        },
+
+        table: {
+            title: "Интервалы",
+            weekday: "День",
+            start: "Начало",
+            end: "Конец",
+            slot: "Слот",
+            min: "мин",
+        },
+
+        actions: {
+            delete: "Удалить",
+        },
+        },
+        visitNotes: {
+        breadcrumb: "Доктор",
+        title: "Заметки визита",
+        total: "Всего",
+
+        patientPrefix: "Пациент",
+
+        create: {
+            title: "Создать заметку",
+        },
+
+        fields: {
+            appointmentId: "ID записи",
+            noteText: "Текст заметки",
+        },
+
+        placeholders: {
+            appointmentId: "например 21",
+            noteText: "Напиши заметку…",
+        },
+
+        info: {
+            appointment: "Запись",
+            patient: "Пациент",
+        },
+
+        actions: {
+            create: "Создать заметку",
+            creating: "Создаём...",
+            reset: "Сбросить",
+            open: "Открыть",
+        },
+
+        list: {
+            title: "Список заметок",
+            empty: "Заметок нет",
+        },
+
+        table: {
+            id: "ID",
+            appointment: "Запись",
+            patient: "Пациент",
+            created: "Создано",
+        },
+
+        pager: {
+            prev: "Назад",
+            next: "Вперёд",
+        },
+
+        errors: {
+            invalidAppointment: "Введите корректный ID записи",
+            noteRequired: "Это поле обязательно.",
+            noPatientOnAppointment:
+            "У выбранной записи нет пациента. Выберите запись, где есть пациент.",
+        },
+        },
+        visitNoteDetail: {
+        breadcrumb: "Доктор",
+        back: "Назад",
+        title: "Заметка визита #{{id}}",
+        patientPrefix: "Пациент",
+
+        actions: {
+            save: "Сохранить",
+            saving: "Сохраняем...",
+            deleteNote: "Удалить заметку",
+            delete: "Удалить",
+            deleting: "Удаляем...",
+            revert: "Вернуть",
+            open: "Открыть",
+        },
+
+        confirm: {
+            deleteAttachment: "Удалить этот файл?",
+            deleteNote: "Удалить эту заметку?",
+        },
+
+        details: {
+            title: "Детали",
+            appointment: "Запись",
+            patient: "Пациент",
+            created: "Создано",
+            updated: "Обновлено",
+        },
+
+        fields: {
+            noteText: "Текст заметки",
+        },
+
+        placeholders: {
+            noteText: "Напиши заметку…",
+        },
+
+        attachments: {
+            title: "Файлы",
+            chooseFile: "Выбрать файл",
+            upload: "Загрузить",
+            uploading: "Загружаем...",
+            empty: "Файлов нет",
+            id: "ID",
+        },
+        },
+        patients: {
+        breadcrumb: "Доктор",
+        title: "Клиенты",
+        total: "Всего",
+        searchPlaceholder: "Поиск клиента",
+        reset: "Сбросить",
+
+        errorTitle: "Ошибка",
+
+        badgeNew: "Новый",
+        actionsTitle: "Действия",
+
+        lastAppointments: "Последние записи",
+        noAppointments: "Записей нет",
+
+        open: "Открыть",
+        empty: "Ничего не найдено",
+
+        pager: {
+            prev: "‹ Назад",
+            next: "Вперёд ›",
+        },
+        },
+        patientDetail: {
+        backToPatients: "Клиенты",
+        breadcrumbEdit: "Редактирование клиента",
+
+        tabs: {
+            profile: "Профиль клиента",
+            history: "История посещений",
+        },
+
+        errorTitle: "Ошибка",
+
+        sections: {
+            client: "Клиент",
+            clientStatus: "Статус клиента",
+            additional: "Дополнительная информация",
+            history: "История посещений",
+        },
+
+        fields: {
+            fullName: "ФИО",
+            phone: "Телефон",
+            email: "Почта",
+            birthDate: "Дата рождения",
+            gender: "Пол",
+            status: "Статус",
+            debt: "Долг",
+            discount: "Скидка",
+        },
+
+        gender: {
+            male: "Мужской",
+            female: "Женский",
+        },
+
+        emptyHistory: "Записей нет",
+
+        table: {
+            id: "ID",
+            date: "Дата",
+            doctor: "Врач",
+            service: "Услуга",
+            room: "Кабинет",
+            status: "Статус",
+        },
+
+        actions: {
+            open: "Открыть",
+        },
+
+        fallback: {
+            doctor: "Врач #{{id}}",
+            service: "Услуга #{{id}}",
+            room: "Кабинет #{{id}}",
+        },
+        },
+        timeOff: {
+        breadcrumb: "Доктор",
+        title: "Отгулы",
+        total: "Всего: {{total}}",
+        next: "Ближайший:",
+
+        errorTitle: "Ошибка",
+        confirmDelete: "Удалить этот интервал отгула?",
+
+        empty: "Пока нет отгулов",
+
+        form: {
+            addTitle: "Добавить интервал",
+            editTitle: "Редактировать интервал #{{id}}",
+            start: "Начало",
+            end: "Конец",
+            reason: "Причина",
+            reasonPlaceholder: "Причина (необязательно)",
+            create: "Создать",
+            clear: "Очистить",
+        },
+
+        list: {
+            title: "Интервалы",
+            refresh: "Обновить",
+            refreshing: "Обновляем...",
+        },
+
+        table: {
+            start: "Начало",
+            end: "Конец",
+            reason: "Причина",
+        },
+
+        actions: {
+            edit: "Редактировать",
+            delete: "Удалить",
+        },
+
+        errors: {
+            unknown: "Неизвестная ошибка",
+        },
+        },
+        appointmentDetail: {
+        breadcrumb: "Доктор",
+        back: "← Назад",
+        title: "Запись",
+
+        details: {
+            title: "Детали",
+            start: "Начало",
+            end: "Конец",
+            patient: "Пациент",
+            doctor: "Врач",
+            service: "Услуга",
+            room: "Кабинет",
+            reason: "Причина",
+            comment: "Комментарий",
+        },
+
+        actions: {
+            title: "Действия",
+            changeStatus: "Изменить статус",
+            selectPlaceholder: "-- выбрать --",
+
+            quick: {
+            confirm: "Подтвердить",
+            complete: "Завершить",
+            noShow: "Не пришёл",
+            cancel: "Отменить",
+            },
+
+            cannotChange: "Статус нельзя изменить из состояния: {{status}}.",
+        },
+
+        visitNotes: {
+            title: "Заметки визита",
+            list: "Список заметок",
+            openOrCreate: "Открыть / Создать заметку",
+        },
+        },
+
+        // ✅ DoctorWeekCalendarPage (NEW)
+        week: {
+          breadcrumb: "Журнал",
+          title: "Журнал",
+
+          today: "Сегодня",
+
+          spec: {
+            all: "Все специальности",
+          },
+
+          table: {
+            head: "График",
+          },
+
+          noData: "Нет данных",
+          noAppts: "На выбранный день нет записей",
+
+          free: "Доступно",
+
+          status: {
+            SCHEDULED: "Запланировано",
+            CONFIRMED: "Подтверждено",
+            COMPLETED: "Завершено",
+            CANCELLED: "Отменено",
+            NO_SHOW: "Не пришёл",
+          },
+        },
+      },
+
       home: {
         title: "Doctor CRM",
         subtitle:
@@ -552,6 +955,30 @@ const resources = {
         search: "Search",
         logout: "Logout",
         language: "Language",
+        emptyDash: "—",
+      },
+
+      nav: {
+        home: "Home",
+        doctor: "Doctor",
+        admin: "Admin",
+        appointments: "Appointments",
+        calendar: "Calendar",
+        schedule: "Schedule",
+        visitNotes: "Visit notes",
+        patients: "Patients",
+        timeOff: "Time-off",
+        doctors: "Doctors",
+        services: "Services",
+        rooms: "Rooms",
+      },
+
+      auth: {
+        login: "Login",
+        email: "Email",
+        password: "Password",
+        signIn: "Sign in",
+        signingIn: "Signing in...",
       },
 
       admin: {
@@ -594,7 +1021,6 @@ const resources = {
             "Tip: use the search input inside each section (Patients / Doctors / Appointments) to quickly find records.",
         },
 
-        // ✅ AdminDoctorsPage
         doctors: {
           breadcrumb: "Doctors",
           title: "Doctors",
@@ -656,7 +1082,7 @@ const resources = {
             active: "Active (Online)",
 
             fullNameRequired: "Full name (required on backend)",
-            fullNamePlaceholder: " ",
+            fullNamePlaceholder: "If empty — we will NOT send full_name",
 
             room: "Room",
             roomNotSelected: "— not selected —",
@@ -666,7 +1092,6 @@ const resources = {
           },
         },
 
-        // ✅ AdminServicesPage
         services: {
           breadcrumb: "Services",
           title: "Services",
@@ -731,7 +1156,6 @@ const resources = {
           },
         },
 
-        // ✅ AdminRoomsPage (NEW)
         rooms: {
           breadcrumb: "Rooms",
           title: "Rooms",
@@ -742,7 +1166,6 @@ const resources = {
 
           none: "—",
           floorLabel: "Floor {{floor}}",
-
           appointment: "Appointment",
 
           legend: {
@@ -797,7 +1220,6 @@ const resources = {
           },
         },
 
-        // ✅ AdminSchedulePage
         schedule: {
           breadcrumb: "Schedule",
           title: "Overall schedule",
@@ -835,7 +1257,6 @@ const resources = {
           },
         },
 
-        // ✅ AdminAppointmentsPage
         appointments: {
           breadcrumb: "Appointments",
           title: "Appointments",
@@ -887,7 +1308,6 @@ const resources = {
           },
         },
 
-        // ✅ AdminAppointmentFormPage (create/edit)
         apptForm: {
           titleNew: "New appointment",
           titleEdit: "Edit appointment #{{id}}",
@@ -937,7 +1357,6 @@ const resources = {
           },
         },
 
-        // ✅ AdminAppointmentDetailPage
         apptDetail: {
           backToList: "Back to list",
           title: "Appointment #{{id}}",
@@ -964,7 +1383,6 @@ const resources = {
           },
         },
 
-        // ✅ AdminPatientsPage (NEW)
         patients: {
           breadcrumb: "Clients",
           title: "Clients",
@@ -1027,27 +1445,407 @@ const resources = {
         },
       },
 
-      nav: {
-        home: "Home",
-        doctor: "Doctor",
-        admin: "Admin",
-        appointments: "Appointments",
-        calendar: "Calendar",
-        schedule: "Schedule",
-        visitNotes: "Visit notes",
-        patients: "Patients",
-        timeOff: "Time-off",
-        doctors: "Doctors",
-        services: "Services",
-        rooms: "Rooms",
-      },
+      doctor: {
+        appointments: {
+          breadcrumb: "Doctor",
+          title: "Appointments",
+          total: "Total",
+          searchPlaceholder: "Search (patient, doctor, etc.)",
 
-      auth: {
-        login: "Login",
-        email: "Email",
-        password: "Password",
-        signIn: "Sign in",
-        signingIn: "Signing in...",
+          filters: {
+            status: "Status",
+            all: "All",
+            from: "From",
+            to: "To",
+          },
+
+          reset: "Reset",
+
+          localSearch: "Local search",
+          localSearchHintTitle:
+            "Server search is not available. Using local search on the loaded page.",
+
+          listTitle: "List",
+
+          table: {
+            id: "ID",
+            start: "Start",
+            end: "End",
+            status: "Status",
+            patient: "Patient",
+            doctor: "Doctor",
+            actions: "Actions",
+          },
+
+          actions: {
+            open: "Open",
+            confirm: "Confirm",
+            confirming: "Confirming…",
+          },
+
+          empty: "No appointments",
+
+          pager: {
+            prev: "Prev",
+            next: "Next",
+            page: "Page {{page}}",
+            showing: "Showing",
+          },
+
+          status: {
+            SCHEDULED: "Scheduled",
+            CONFIRMED: "Confirmed",
+            COMPLETED: "Completed",
+            CANCELLED: "Cancelled",
+            NO_SHOW: "No show",
+          },
+        },
+        schedule: {
+        breadcrumb: "Doctor",
+        title: "Schedule",
+        total: "Total",
+
+        confirmDelete: "Delete this schedule interval?",
+
+        empty: "No schedule yet",
+
+        weekdays: {
+            mon: "Mon",
+            tue: "Tue",
+            wed: "Wed",
+            thu: "Thu",
+            fri: "Fri",
+            sat: "Sat",
+            sun: "Sun",
+        },
+
+        form: {
+            addTitle: "Add interval",
+            editTitle: "Edit interval",
+
+            weekday: "Weekday",
+            start: "Start",
+            end: "End",
+            slotMinutes: "Slot minutes",
+            slotHint: "Example: 10 / 15 / 20 / 30",
+
+            create: "Create",
+            save: "Save",
+            saving: "Saving...",
+            cancel: "Cancel",
+            reset: "Reset",
+        },
+
+        validation: {
+            endLater: "End time must be later than start time.",
+            slotMin: "Slot minutes must be >= 5.",
+        },
+
+        table: {
+            title: "Intervals",
+            weekday: "Weekday",
+            start: "Start",
+            end: "End",
+            slot: "Slot",
+            min: "min",
+        },
+
+        actions: {
+            delete: "Delete",
+        },
+        },
+        visitNotes: {
+        breadcrumb: "Doctor",
+        title: "Visit notes",
+        total: "Total",
+
+        patientPrefix: "Patient",
+
+        create: {
+            title: "Create note",
+        },
+
+        fields: {
+            appointmentId: "Appointment ID",
+            noteText: "Note text",
+        },
+
+        placeholders: {
+            appointmentId: "e.g. 21",
+            noteText: "Write a note…",
+        },
+
+        info: {
+            appointment: "Appointment",
+            patient: "Patient",
+        },
+
+        actions: {
+            create: "Create note",
+            creating: "Creating...",
+            reset: "Reset",
+            open: "Open",
+        },
+
+        list: {
+            title: "Notes list",
+            empty: "No notes",
+        },
+
+        table: {
+            id: "ID",
+            appointment: "Appointment",
+            patient: "Patient",
+            created: "Created",
+        },
+
+        pager: {
+            prev: "Prev",
+            next: "Next",
+        },
+
+        errors: {
+            invalidAppointment: "Enter valid Appointment ID",
+            noteRequired: "This field is required.",
+            noPatientOnAppointment:
+            "Selected appointment has no patient. Pick an appointment that has a patient.",
+        },
+        },
+        visitNoteDetail: {
+        breadcrumb: "Doctor",
+        back: "Back",
+        title: "Visit note #{{id}}",
+        patientPrefix: "Patient",
+
+        actions: {
+            save: "Save",
+            saving: "Saving...",
+            deleteNote: "Delete note",
+            delete: "Delete",
+            deleting: "Deleting...",
+            revert: "Revert",
+            open: "Open",
+        },
+
+        confirm: {
+            deleteAttachment: "Delete this attachment?",
+            deleteNote: "Delete this note?",
+        },
+
+        details: {
+            title: "Details",
+            appointment: "Appointment",
+            patient: "Patient",
+            created: "Created",
+            updated: "Updated",
+        },
+
+        fields: {
+            noteText: "Note text",
+        },
+
+        placeholders: {
+            noteText: "Write note…",
+        },
+
+        attachments: {
+            title: "Attachments",
+            chooseFile: "Choose file",
+            upload: "Upload",
+            uploading: "Uploading...",
+            empty: "No attachments",
+            id: "ID",
+        },
+        },
+        patients: {
+        breadcrumb: "Doctor",
+        title: "Patients",
+        total: "Total",
+        searchPlaceholder: "Search patient",
+        reset: "Reset",
+
+        errorTitle: "Error",
+
+        badgeNew: "New",
+        actionsTitle: "Actions",
+
+        lastAppointments: "Last appointments",
+        noAppointments: "No appointments",
+
+        open: "Open",
+        empty: "Nothing found",
+
+        pager: {
+            prev: "‹ Previous",
+            next: "Next ›",
+        },
+        },
+        patientDetail: {
+        backToPatients: "Patients",
+        breadcrumbEdit: "Edit patient",
+
+        tabs: {
+            profile: "Patient profile",
+            history: "Visit history",
+        },
+
+        errorTitle: "Error",
+
+        sections: {
+            client: "Patient",
+            clientStatus: "Patient status",
+            additional: "Additional information",
+            history: "Visit history",
+        },
+
+        fields: {
+            fullName: "Full name",
+            phone: "Phone",
+            email: "Email",
+            birthDate: "Birth date",
+            gender: "Gender",
+            status: "Status",
+            debt: "Debt",
+            discount: "Discount",
+        },
+
+        gender: {
+            male: "Male",
+            female: "Female",
+        },
+
+        emptyHistory: "No records",
+
+        table: {
+            id: "ID",
+            date: "Date",
+            doctor: "Doctor",
+            service: "Service",
+            room: "Room",
+            status: "Status",
+        },
+
+        actions: {
+            open: "Open",
+        },
+
+        fallback: {
+            doctor: "Doctor #{{id}}",
+            service: "Service #{{id}}",
+            room: "Room #{{id}}",
+        },
+        },
+        timeOff: {
+        breadcrumb: "Doctor",
+        title: "Time-off",
+        total: "Total: {{total}}",
+        next: "Next:",
+
+        errorTitle: "Error",
+        confirmDelete: "Delete this time-off interval?",
+
+        empty: "No time-off yet",
+
+        form: {
+            addTitle: "Add interval",
+            editTitle: "Edit interval #{{id}}",
+            start: "Start",
+            end: "End",
+            reason: "Reason",
+            reasonPlaceholder: "Reason (optional)",
+            create: "Create",
+            clear: "Clear",
+        },
+
+        list: {
+            title: "Intervals",
+            refresh: "Refresh",
+            refreshing: "Refreshing...",
+        },
+
+        table: {
+            start: "Start",
+            end: "End",
+            reason: "Reason",
+        },
+
+        actions: {
+            edit: "Edit",
+            delete: "Delete",
+        },
+
+        errors: {
+            unknown: "Unknown error",
+        },
+        },
+        appointmentDetail: {
+        breadcrumb: "Doctor",
+        back: "← Back",
+        title: "Appointment",
+
+        details: {
+            title: "Details",
+            start: "Start",
+            end: "End",
+            patient: "Patient",
+            doctor: "Doctor",
+            service: "Service",
+            room: "Room",
+            reason: "Reason",
+            comment: "Comment",
+        },
+
+        actions: {
+            title: "Actions",
+            changeStatus: "Change status",
+            selectPlaceholder: "-- select --",
+
+            quick: {
+            confirm: "Confirm",
+            complete: "Complete",
+            noShow: "No show",
+            cancel: "Cancel",
+            },
+
+            cannotChange: "Status cannot be changed from: {{status}}.",
+        },
+
+        visitNotes: {
+            title: "Visit notes",
+            list: "Notes list",
+            openOrCreate: "Open / Create note",
+        },
+        },
+
+
+        // ✅ DoctorWeekCalendarPage (NEW)
+        week: {
+          breadcrumb: "Journal",
+          title: "Journal",
+
+          today: "Today",
+
+          spec: {
+            all: "All specializations",
+          },
+
+          table: {
+            head: "Schedule",
+          },
+
+          noData: "No data",
+          noAppts: "No appointments for the selected day",
+
+          free: "Available",
+
+          status: {
+            SCHEDULED: "Scheduled",
+            CONFIRMED: "Confirmed",
+            COMPLETED: "Completed",
+            CANCELLED: "Cancelled",
+            NO_SHOW: "No show",
+          },
+        },
       },
 
       home: {
@@ -1078,17 +1876,14 @@ const resources = {
   },
 };
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: "ru",
-    interpolation: { escapeValue: false },
-    detection: {
-      order: ["localStorage", "navigator"],
-      caches: ["localStorage"],
-    },
-  });
+i18n.use(LanguageDetector).use(initReactI18next).init({
+  resources,
+  fallbackLng: "ru",
+  interpolation: { escapeValue: false },
+  detection: {
+    order: ["localStorage", "navigator"],
+    caches: ["localStorage"],
+  },
+});
 
 export default i18n;

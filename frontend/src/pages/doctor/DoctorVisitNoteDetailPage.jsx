@@ -1,19 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { doctorApi } from "../../api/doctorApi";
+import { useTranslation } from "react-i18next";
 import "../../styles/DoctorVisitNoteDetailPage.css";
 
 // ⚠️ если бэк ждёт другое поле — поменяй
 const FIELD_TEXT = "note_text"; // иногда "content" / "note"
 
 function fileNameFromAttachment(a) {
-  return a?.filename || a?.file_name || a?.file || (a?.id ? `attachment-${a.id}` : "attachment");
+  return (
+    a?.filename ||
+    a?.file_name ||
+    a?.file ||
+    (a?.id ? `attachment-${a.id}` : "attachment")
+  );
 }
 function fileUrlFromAttachment(a) {
   return a?.file_url || a?.url || a?.file || a?.download_url || "#";
 }
 
 export default function DoctorVisitNoteDetailPage() {
+  const { t } = useTranslation();
+
   const { id } = useParams();
   const nav = useNavigate();
 
@@ -83,7 +91,7 @@ export default function DoctorVisitNoteDetailPage() {
   };
 
   const removeAttachment = async (attachmentId) => {
-    if (!confirm("Delete this attachment?")) return;
+    if (!confirm(t("doctor.visitNoteDetail.confirm.deleteAttachment"))) return;
     setErr(null);
     setDeletingAttId(attachmentId);
     try {
@@ -97,7 +105,7 @@ export default function DoctorVisitNoteDetailPage() {
   };
 
   const removeNote = async () => {
-    if (!confirm("Delete this note?")) return;
+    if (!confirm(t("doctor.visitNoteDetail.confirm.deleteNote"))) return;
     setErr(null);
     setDeletingNote(true);
     try {
@@ -111,33 +119,47 @@ export default function DoctorVisitNoteDetailPage() {
   };
 
   const appointmentLabel =
-    note?.appointment?.id ??
-    note?.appointment_id ??
-    note?.appointment ??
-    "-";
+    note?.appointment?.id ?? note?.appointment_id ?? note?.appointment ?? "-";
 
   const patientLabel =
     note?.patient?.full_name ??
     note?.patient_name ??
-    (note?.patient ? `Patient #${note.patient}` : "-");
+    (note?.patient ? `${t("doctor.visitNoteDetail.patientPrefix")} #${note.patient}` : "-");
 
   return (
     <div className="vndPage">
       <div className="vndTop">
-        <Link className="vndBack" to="/doctor/visit-notes">← Back</Link>
+        <Link className="vndBack" to="/doctor/visit-notes">
+          ← {t("doctor.visitNoteDetail.back")}
+        </Link>
 
         <div className="vndHeaderRow">
           <div>
-            <div className="vndBreadcrumb">Doctor</div>
-            <h1 className="vndTitle">Visit note #{id}</h1>
+            <div className="vndBreadcrumb">{t("doctor.visitNoteDetail.breadcrumb")}</div>
+            <h1 className="vndTitle">
+              {t("doctor.visitNoteDetail.title", { id })}
+            </h1>
           </div>
 
           <div className="vndHeaderActions">
-            <button className="vndBtnPrimary" onClick={save} disabled={saving || loading || !note}>
-              {saving ? "Saving..." : "Save"}
+            <button
+              className="vndBtnPrimary"
+              onClick={save}
+              disabled={saving || loading || !note}
+              type="button"
+            >
+              {saving ? t("doctor.visitNoteDetail.actions.saving") : t("doctor.visitNoteDetail.actions.save")}
             </button>
-            <button className="vndBtnDanger" onClick={removeNote} disabled={deletingNote || loading || !note}>
-              {deletingNote ? "Deleting..." : "Delete note"}
+
+            <button
+              className="vndBtnDanger"
+              onClick={removeNote}
+              disabled={deletingNote || loading || !note}
+              type="button"
+            >
+              {deletingNote
+                ? t("doctor.visitNoteDetail.actions.deleting")
+                : t("doctor.visitNoteDetail.actions.deleteNote")}
             </button>
           </div>
         </div>
@@ -149,88 +171,93 @@ export default function DoctorVisitNoteDetailPage() {
         )}
       </div>
 
-      {loading && <div className="vndLoading">Loading…</div>}
+      {loading && <div className="vndLoading">{t("common.loading")}</div>}
 
       {note && !loading && (
         <div className="vndGrid">
           {/* LEFT: note */}
           <div className="vndCard">
-            <div className="vndCardTitle">Details</div>
+            <div className="vndCardTitle">{t("doctor.visitNoteDetail.details.title")}</div>
 
             <div className="vndMeta">
               <div className="vndMetaRow">
-                <span className="vndMetaK">Appointment</span>
+                <span className="vndMetaK">{t("doctor.visitNoteDetail.details.appointment")}</span>
                 <span className="vndMetaV">#{appointmentLabel}</span>
               </div>
               <div className="vndMetaRow">
-                <span className="vndMetaK">Patient</span>
+                <span className="vndMetaK">{t("doctor.visitNoteDetail.details.patient")}</span>
                 <span className="vndMetaV">{patientLabel}</span>
               </div>
               <div className="vndMetaRow">
-                <span className="vndMetaK">Created</span>
-                <span className="vndMetaV">{note?.created_at ?? "—"}</span>
+                <span className="vndMetaK">{t("doctor.visitNoteDetail.details.created")}</span>
+                <span className="vndMetaV">{note?.created_at ?? t("common.emptyDash")}</span>
               </div>
               <div className="vndMetaRow">
-                <span className="vndMetaK">Updated</span>
-                <span className="vndMetaV">{note?.updated_at ?? "—"}</span>
+                <span className="vndMetaK">{t("doctor.visitNoteDetail.details.updated")}</span>
+                <span className="vndMetaV">{note?.updated_at ?? t("common.emptyDash")}</span>
               </div>
             </div>
 
             <div className="vndField">
-              <label className="vndLabel">Note text</label>
+              <label className="vndLabel">{t("doctor.visitNoteDetail.fields.noteText")}</label>
               <textarea
                 className="vndTextarea"
                 rows={10}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Write note…"
+                placeholder={t("doctor.visitNoteDetail.placeholders.noteText")}
               />
             </div>
 
             <div className="vndBottomActions">
-              <button className="vndBtnPrimary" onClick={save} disabled={saving}>
-                {saving ? "Saving..." : "Save"}
+              <button className="vndBtnPrimary" onClick={save} disabled={saving} type="button">
+                {saving ? t("doctor.visitNoteDetail.actions.saving") : t("doctor.visitNoteDetail.actions.save")}
               </button>
-              <button className="vndBtnGhost" onClick={() => setText(note?.[FIELD_TEXT] ?? "")} disabled={saving}>
-                Revert
+
+              <button
+                className="vndBtnGhost"
+                onClick={() => setText(note?.[FIELD_TEXT] ?? "")}
+                disabled={saving}
+                type="button"
+              >
+                {t("doctor.visitNoteDetail.actions.revert")}
               </button>
             </div>
           </div>
 
           {/* RIGHT: attachments */}
           <div className="vndCard">
-            <div className="vndCardTitle">Attachments</div>
+            <div className="vndCardTitle">{t("doctor.visitNoteDetail.attachments.title")}</div>
 
             <div className="vndUploadRow">
               <label className="vndFilePick">
-                <input
-                  type="file"
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                />
-                <span>{file ? file.name : "Choose file"}</span>
+                <input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+                <span>{file ? file.name : t("doctor.visitNoteDetail.attachments.chooseFile")}</span>
               </label>
 
               <button
                 className="vndBtnPrimary"
                 onClick={upload}
                 disabled={!file || uploading}
+                type="button"
               >
-                {uploading ? "Uploading..." : "Upload"}
+                {uploading
+                  ? t("doctor.visitNoteDetail.attachments.uploading")
+                  : t("doctor.visitNoteDetail.attachments.upload")}
               </button>
             </div>
 
             {attachments.length === 0 ? (
-              <div className="vndEmpty">No attachments</div>
+              <div className="vndEmpty">{t("doctor.visitNoteDetail.attachments.empty")}</div>
             ) : (
               <div className="vndAttList">
                 {attachments.map((a) => (
                   <div key={a.id} className="vndAttItem">
                     <div className="vndAttMain">
-                      <div className="vndAttName">
-                        {fileNameFromAttachment(a)}
-                      </div>
+                      <div className="vndAttName">{fileNameFromAttachment(a)}</div>
                       <div className="vndAttSub">
-                        ID: <span className="vndMono">{a.id}</span>
+                        {t("doctor.visitNoteDetail.attachments.id")}:{" "}
+                        <span className="vndMono">{a.id}</span>
                         {a?.created_at ? <> · {a.created_at}</> : null}
                       </div>
                     </div>
@@ -242,23 +269,24 @@ export default function DoctorVisitNoteDetailPage() {
                         target="_blank"
                         rel="noreferrer"
                       >
-                        Open
+                        {t("doctor.visitNoteDetail.actions.open")}
                       </a>
 
                       <button
                         className="vndBtnGhostSm"
                         onClick={() => removeAttachment(a.id)}
                         disabled={deletingAttId === a.id}
+                        type="button"
                       >
-                        {deletingAttId === a.id ? "Deleting..." : "Delete"}
+                        {deletingAttId === a.id
+                          ? t("doctor.visitNoteDetail.actions.deleting")
+                          : t("doctor.visitNoteDetail.actions.delete")}
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-
-            
           </div>
         </div>
       )}

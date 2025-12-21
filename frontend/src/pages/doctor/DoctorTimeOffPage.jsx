@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { doctorApi } from "../../api/doctorApi";
+import { useTranslation } from "react-i18next";
 import "../../styles/DoctorTimeOffPage.css";
 
 function toInputDatetime(iso) {
@@ -19,8 +20,8 @@ function toISO(dtLocal) {
   return new Date(dtLocal).toISOString();
 }
 
-function fmtDT(iso) {
-  if (!iso) return "—";
+function fmtDT(iso, emptyDash = "—") {
+  if (!iso) return emptyDash;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso);
   const pad = (n) => String(n).padStart(2, "0");
@@ -29,19 +30,22 @@ function fmtDT(iso) {
   )}:${pad(d.getMinutes())}`;
 }
 
-function prettyError(e) {
+function prettyError(e, t) {
   if (!e) return null;
   if (typeof e === "string") return e;
   if (e.detail) return e.detail;
   if (e.non_field_errors?.length) return e.non_field_errors.join("\n");
   const keys = Object.keys(e);
-  if (keys.length === 0) return "Unknown error";
+  if (keys.length === 0) return t("doctor.timeOff.errors.unknown");
   return keys
     .map((k) => `${k}: ${Array.isArray(e[k]) ? e[k].join(", ") : String(e[k])}`)
     .join("\n");
 }
 
 export default function DoctorTimeOffPage() {
+  const { t } = useTranslation();
+  const emptyDash = t("common.emptyDash");
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errRaw, setErrRaw] = useState(null);
@@ -116,7 +120,7 @@ export default function DoctorTimeOffPage() {
   };
 
   const onDelete = async (id) => {
-    if (!confirm("Delete this time-off interval?")) return;
+    if (!confirm(t("doctor.timeOff.confirmDelete"))) return;
     setErrRaw(null);
     try {
       await doctorApi.deleteTimeOff(id);
@@ -127,8 +131,7 @@ export default function DoctorTimeOffPage() {
     }
   };
 
-  const errText = prettyError(errRaw);
-
+  const errText = prettyError(errRaw, t);
   const total = items.length;
 
   const quick = useMemo(() => {
@@ -142,19 +145,21 @@ export default function DoctorTimeOffPage() {
   return (
     <div className="dto-page">
       <div className="dto-top">
-        <div className="dto-kicker">Doctor</div>
+        <div className="dto-kicker">{t("doctor.timeOff.breadcrumb")}</div>
+
         <div className="dto-titleRow">
-          <h1 className="dto-title">Time-off</h1>
+          <h1 className="dto-title">{t("doctor.timeOff.title")}</h1>
 
           <div className="dto-right">
-            <div className="dto-pill">Total: {total}</div>
+            <div className="dto-pill">{t("doctor.timeOff.total", { total })}</div>
           </div>
         </div>
 
         {quick && (
           <div className="dto-hint">
-            <span className="dto-hintLabel">Next:</span>{" "}
-            <b>{fmtDT(quick.start_at)}</b> — <b>{fmtDT(quick.end_at)}</b>
+            <span className="dto-hintLabel">{t("doctor.timeOff.next")}</span>{" "}
+            <b>{fmtDT(quick.start_at, emptyDash)}</b> —{" "}
+            <b>{fmtDT(quick.end_at, emptyDash)}</b>
             {quick.reason ? (
               <>
                 {" "}
@@ -167,7 +172,7 @@ export default function DoctorTimeOffPage() {
 
       {errText && (
         <div className="dto-error">
-          <div className="dto-errorTitle">Error</div>
+          <div className="dto-errorTitle">{t("doctor.timeOff.errorTitle")}</div>
           <div className="dto-errorBody">{errText}</div>
         </div>
       )}
@@ -177,18 +182,25 @@ export default function DoctorTimeOffPage() {
         <div className="dto-card">
           <div className="dto-cardHead">
             <div className="dto-cardTitle">
-              {editingId ? `Edit interval #${editingId}` : "Add interval"}
+              {editingId
+                ? t("doctor.timeOff.form.editTitle", { id: editingId })
+                : t("doctor.timeOff.form.addTitle")}
             </div>
+
             {editingId && (
-              <button className="dto-btn dto-btnGhost" type="button" onClick={resetForm}>
-                Cancel
+              <button
+                className="dto-btn dto-btnGhost"
+                type="button"
+                onClick={resetForm}
+              >
+                {t("common.cancel")}
               </button>
             )}
           </div>
 
           <form onSubmit={submit} className="dto-form">
             <div className="dto-field">
-              <div className="dto-label">Start</div>
+              <div className="dto-label">{t("doctor.timeOff.form.start")}</div>
               <input
                 className="dto-input"
                 type="datetime-local"
@@ -198,7 +210,7 @@ export default function DoctorTimeOffPage() {
             </div>
 
             <div className="dto-field">
-              <div className="dto-label">End</div>
+              <div className="dto-label">{t("doctor.timeOff.form.end")}</div>
               <input
                 className="dto-input"
                 type="datetime-local"
@@ -208,19 +220,28 @@ export default function DoctorTimeOffPage() {
             </div>
 
             <div className="dto-field">
-              <div className="dto-label">Reason</div>
+              <div className="dto-label">{t("doctor.timeOff.form.reason")}</div>
               <input
                 className="dto-input"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Reason (optional)"
+                placeholder={t("doctor.timeOff.form.reasonPlaceholder")}
               />
             </div>
 
             <div className="dto-actions">
-              <button className="dto-btn dto-btnPrimary" type="submit" disabled={saving}>
-                {saving ? "Saving..." : editingId ? "Save" : "Create"}
+              <button
+                className="dto-btn dto-btnPrimary"
+                type="submit"
+                disabled={saving}
+              >
+                {saving
+                  ? t("common.saving")
+                  : editingId
+                  ? t("common.save")
+                  : t("doctor.timeOff.form.create")}
               </button>
+
               <button
                 className="dto-btn dto-btnGhost"
                 type="button"
@@ -229,7 +250,7 @@ export default function DoctorTimeOffPage() {
                   setErrRaw(null);
                 }}
               >
-                Clear
+                {t("doctor.timeOff.form.clear")}
               </button>
             </div>
           </form>
@@ -238,16 +259,23 @@ export default function DoctorTimeOffPage() {
         {/* List card */}
         <div className="dto-card">
           <div className="dto-cardHead">
-            <div className="dto-cardTitle">Intervals</div>
-            <button className="dto-btn dto-btnGhost" type="button" onClick={load} disabled={loading}>
-              {loading ? "Refreshing..." : "Refresh"}
+            <div className="dto-cardTitle">{t("doctor.timeOff.list.title")}</div>
+            <button
+              className="dto-btn dto-btnGhost"
+              type="button"
+              onClick={load}
+              disabled={loading}
+            >
+              {loading
+                ? t("doctor.timeOff.list.refreshing")
+                : t("doctor.timeOff.list.refresh")}
             </button>
           </div>
 
-          {loading && <div className="dto-loading">Loading…</div>}
+          {loading && <div className="dto-loading">{t("common.loading")}</div>}
 
           {!loading && items.length === 0 && (
-            <div className="dto-empty">No time-off yet</div>
+            <div className="dto-empty">{t("doctor.timeOff.empty")}</div>
           )}
 
           {!loading && items.length > 0 && (
@@ -255,24 +283,27 @@ export default function DoctorTimeOffPage() {
               <table className="dto-table">
                 <thead>
                   <tr>
-                    <th>Start</th>
-                    <th>End</th>
-                    <th>Reason</th>
+                    <th>{t("doctor.timeOff.table.start")}</th>
+                    <th>{t("doctor.timeOff.table.end")}</th>
+                    <th>{t("doctor.timeOff.table.reason")}</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((x) => (
                     <tr key={x.id}>
-                      <td className="dto-mono">{fmtDT(x.start_at)}</td>
-                      <td className="dto-mono">{fmtDT(x.end_at)}</td>
-                      <td className="dto-reason">{x.reason ?? "—"}</td>
+                      <td className="dto-mono">{fmtDT(x.start_at, emptyDash)}</td>
+                      <td className="dto-mono">{fmtDT(x.end_at, emptyDash)}</td>
+                      <td className="dto-reason">{x.reason ?? emptyDash}</td>
                       <td className="dto-rowActions">
                         <button className="dto-chip" onClick={() => onEdit(x)}>
-                          Edit
+                          {t("doctor.timeOff.actions.edit")}
                         </button>
-                        <button className="dto-chip dto-chipDanger" onClick={() => onDelete(x.id)}>
-                          Delete
+                        <button
+                          className="dto-chip dto-chipDanger"
+                          onClick={() => onDelete(x.id)}
+                        >
+                          {t("doctor.timeOff.actions.delete")}
                         </button>
                       </td>
                     </tr>
