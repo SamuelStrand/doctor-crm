@@ -25,7 +25,8 @@ function formatDT(s) {
 function pickDoctorName(a, t) {
   const d = a?.doctor;
   if (!d) return t("admin.schedule.doctor.unknown");
-  if (typeof d === "string" || typeof d === "number") return `${t("admin.schedule.doctor.label")} #${d}`;
+  if (typeof d === "string" || typeof d === "number")
+    return `${t("admin.schedule.doctor.label")} #${d}`;
   return (
     d?.doctor_profile?.full_name ||
     d?.full_name ||
@@ -39,7 +40,6 @@ function pickService(a, lang) {
   if (!s) return "—";
   if (typeof s === "string" || typeof s === "number") return String(s);
 
-  // если бэк отдаёт name_ru/name_en/name_kk
   if (lang === "ru") return s?.name_ru || s?.name_en || s?.name_kk || s?.name || s?.code || s?.id || "—";
   if (lang === "en") return s?.name_en || s?.name_ru || s?.name_kk || s?.name || s?.code || s?.id || "—";
   if (lang === "kk") return s?.name_kk || s?.name_ru || s?.name_en || s?.name || s?.code || s?.id || "—";
@@ -54,11 +54,22 @@ function pickRoom(a) {
   return r?.name || r?.id || "—";
 }
 
-function pickPatient(a) {
+// ✅ теперь умеет: если patient=id → достаёт имя из справочника
+function pickPatient(a, patientNameById) {
   const p = a?.patient;
   if (!p) return "—";
-  if (typeof p === "string" || typeof p === "number") return `#${p}`;
-  return p?.full_name || [p?.last_name, p?.first_name].filter(Boolean).join(" ") || p?.id || "—";
+
+  if (typeof p === "string" || typeof p === "number") {
+    return patientNameById?.get(String(p)) || `#${p}`;
+  }
+
+  return (
+    p?.full_name ||
+    [p?.last_name, p?.first_name, p?.middle_name].filter(Boolean).join(" ") ||
+    p?.email ||
+    p?.id ||
+    "—"
+  );
 }
 
 export default function AdminSchedulePage() {
@@ -70,6 +81,7 @@ export default function AdminSchedulePage() {
   const [doctor, setDoctor] = useState(""); // optional filter
 
   const [doctors, setDoctors] = useState([]);
+  const [patients, setPatients] = useState([]); // ✅ NEW
   const [items, setItems] = useState([]);
   const [count, setCount] = useState(0);
 
@@ -80,17 +92,43 @@ export default function AdminSchedulePage() {
   useEffect(() => {
     (async () => {
       setRefsLoading(true);
+
+      // doctors
       try {
         const d = await adminApi.listDoctors({ page: 1, page_size: 200 });
         const { items } = unwrapPaginated(d);
         setDoctors(items);
       } catch (_) {
         setDoctors([]);
+      }
+
+      // ✅ patients (для отображения имени вместо id)
+      try {
+        // если пациентов больше — увеличь page_size
+        const p = await adminApi.listPatients({ page: 1, page_size: 500 });
+        const { items } = unwrapPaginated(p);
+        setPatients(items);
+      } catch (_) {
+        setPatients([]);
       } finally {
         setRefsLoading(false);
       }
     })();
   }, []);
+
+  // ✅ мапа id → имя пациента
+  const patientNameById = useMemo(() => {
+    const m = new Map();
+    for (const p of patients) {
+      const name =
+        p?.full_name ||
+        [p?.last_name, p?.first_name, p?.middle_name].filter(Boolean).join(" ") ||
+        p?.email ||
+        `#${p?.id ?? "?"}`;
+      if (p?.id != null) m.set(String(p.id), name);
+    }
+    return m;
+  }, [patients]);
 
   const statusLabel = (st) => {
     if (!st) return "—";
@@ -139,7 +177,8 @@ export default function AdminSchedulePage() {
   const grouped = useMemo(() => {
     const map = new Map();
     for (const a of items) {
-      const key = typeof a?.doctor === "object" ? (a?.doctor?.id ?? "unknown") : (a?.doctor ?? "unknown");
+      const key =
+        typeof a?.doctor === "object" ? a?.doctor?.id ?? "unknown" : a?.doctor ?? "unknown";
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(a);
     }
@@ -166,22 +205,12 @@ export default function AdminSchedulePage() {
         <div className="scToolbar">
           <label className="scChip">
             <span>{t("admin.schedule.from")}</span>
-            <input
-              className="scDate"
-              type="datetime-local"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
+            <input className="scDate" type="datetime-local" value={from} onChange={(e) => setFrom(e.target.value)} />
           </label>
 
           <label className="scChip">
             <span>{t("admin.schedule.to")}</span>
-            <input
-              className="scDate"
-              type="datetime-local"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
+            <input className="scDate" type="datetime-local" value={to} onChange={(e) => setTo(e.target.value)} />
           </label>
 
           <label className="scChip">
@@ -212,9 +241,7 @@ export default function AdminSchedulePage() {
         )}
       </div>
 
-      {!loading && grouped.length === 0 && (
-        <div className="scEmpty">{t("admin.schedule.empty")}</div>
-      )}
+      {!loading && grouped.length === 0 && <div className="scEmpty">{t("admin.schedule.empty")}</div>}
 
       {!loading &&
         grouped.map(([docId, list]) => (
@@ -259,7 +286,10 @@ export default function AdminSchedulePage() {
                       <td className="scTd">
                         <span className={`scBadge ${a.status || ""}`}>{statusLabel(a.status)}</span>
                       </td>
-                      <td className="scTd">{pickPatient(a)}</td>
+
+                      {/* ✅ вот тут теперь имя вместо #id */}
+                      <td className="scTd">{pickPatient(a, patientNameById)}</td>
+
                       <td className="scTd">{pickService(a, lang)}</td>
                       <td className="scTd">{pickRoom(a)}</td>
                     </tr>

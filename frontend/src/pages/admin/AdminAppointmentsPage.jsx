@@ -35,11 +35,24 @@ function formatDT(s) {
   return `${dd}.${mm}.${yy} ${hh}:${mi}`;
 }
 
-function pickPatient(a) {
+// ✅ теперь умеет: если patient=id → достаёт имя из справочника
+function pickPatient(a, patientNameById) {
   const p = a?.patient;
   if (!p) return "—";
-  if (typeof p === "string" || typeof p === "number") return String(p);
-  return p.full_name || [p.last_name, p.first_name].filter(Boolean).join(" ") || p.id || "—";
+
+  // если бэк отдаёт id
+  if (typeof p === "string" || typeof p === "number") {
+    return patientNameById?.get(String(p)) || `#${p}`;
+  }
+
+  // если бэк отдаст объект
+  return (
+    p.full_name ||
+    [p.last_name, p.first_name, p.middle_name].filter(Boolean).join(" ") ||
+    p.email ||
+    p.id ||
+    "—"
+  );
 }
 
 function pickDoctor(a) {
@@ -93,6 +106,40 @@ export default function AdminAppointmentsPage() {
 
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // ✅ NEW: пациенты для отображения имени
+  const [patients, setPatients] = useState([]);
+  const [refsLoading, setRefsLoading] = useState(false);
+
+  // ✅ подгружаем пациентов один раз
+  useEffect(() => {
+    (async () => {
+      setRefsLoading(true);
+      try {
+        const p = await adminApi.listPatients({ page: 1, page_size: 500 });
+        const { items } = unwrapPaginated(p);
+        setPatients(items);
+      } catch (_) {
+        setPatients([]);
+      } finally {
+        setRefsLoading(false);
+      }
+    })();
+  }, []);
+
+  // ✅ мапа id → имя пациента
+  const patientNameById = useMemo(() => {
+    const m = new Map();
+    for (const p of patients) {
+      const name =
+        p?.full_name ||
+        [p?.last_name, p?.first_name, p?.middle_name].filter(Boolean).join(" ") ||
+        p?.email ||
+        `#${p?.id ?? "?"}`;
+      if (p?.id != null) m.set(String(p.id), name);
+    }
+    return m;
+  }, [patients]);
 
   const statusLabel = (st) => {
     if (!st) return "—";
@@ -266,6 +313,7 @@ export default function AdminAppointmentsPage() {
             {t("admin.appointments.total")}: {count}
           </span>
           {loading && <span className="aLoading">{t("admin.appointments.loading")}</span>}
+          {refsLoading && <span className="aLoading">• {t("admin.schedule.loadingDoctors")}</span>}
         </div>
 
         {err && (
@@ -303,7 +351,9 @@ export default function AdminAppointmentsPage() {
                   <span className={`aBadge ${a.status || ""}`}>{statusLabel(a.status)}</span>
                 </td>
 
-                <td className="aTd">{pickPatient(a)}</td>
+                {/* ✅ имя пациента вместо id */}
+                <td className="aTd">{pickPatient(a, patientNameById)}</td>
+
                 <td className="aTd">{pickDoctor(a)}</td>
                 <td className="aTd">{pickService(a, lang)}</td>
                 <td className="aTd">{pickRoom(a)}</td>

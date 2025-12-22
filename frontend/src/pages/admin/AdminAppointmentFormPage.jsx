@@ -79,6 +79,29 @@ function unwrapItems(resp) {
   return [];
 }
 
+/** ✅ красивый label для пациента: "Full Name — #ID (phone)" */
+function makePatientLabel(p, lang) {
+  if (!p) return "";
+  const name =
+    pickName(p, lang) ||
+    [p?.last_name, p?.first_name, p?.middle_name].filter(Boolean).join(" ") ||
+    p?.email ||
+    "";
+
+  const idPart = p?.id != null ? `#${p.id}` : "";
+  const phonePart = p?.phone ? `(${p.phone})` : "";
+
+  // если имени нет — хотя бы id
+  if (!name && idPart) return `${idPart} ${phonePart}`.trim();
+
+  // имя первым, id рядом
+  const parts = [name, idPart, phonePart].filter(Boolean);
+  // сделаем "Имя — #12 (тел)"
+  const [n, id, ph] = parts;
+  if (n && (id || ph)) return `${n} — ${[id, ph].filter(Boolean).join(" ")}`;
+  return n || "—";
+}
+
 export default function AdminAppointmentFormPage({ mode }) {
   const { t, i18n } = useTranslation();
   const lang = (i18n.language || "ru").slice(0, 2);
@@ -269,9 +292,7 @@ export default function AdminAppointmentFormPage({ mode }) {
           {/* ROW 1 */}
           <div className="afGrid2">
             <div className="afField">
-              <div className="afLabel">
-                {t("admin.apptForm.fields.patient")} *
-              </div>
+              <div className="afLabel">{t("admin.apptForm.fields.patient")} *</div>
 
               {canUsePatients ? (
                 <select
@@ -280,9 +301,11 @@ export default function AdminAppointmentFormPage({ mode }) {
                   onChange={(e) => setPatient(e.target.value)}
                 >
                   <option value="">{t("admin.apptForm.select")}</option>
+
+                  {/* ✅ теперь в списке видно и имя, и id */}
                   {patients.map((p) => (
                     <option key={p.id} value={p.id}>
-                      #{p.id} {pickName(p, lang)}
+                      {makePatientLabel(p, lang)}
                     </option>
                   ))}
                 </select>
@@ -301,9 +324,7 @@ export default function AdminAppointmentFormPage({ mode }) {
             </div>
 
             <div className="afField">
-              <div className="afLabel">
-                {t("admin.apptForm.fields.doctor")} *
-              </div>
+              <div className="afLabel">{t("admin.apptForm.fields.doctor")} *</div>
 
               {canUseDoctors ? (
                 <select
@@ -336,9 +357,7 @@ export default function AdminAppointmentFormPage({ mode }) {
           {/* ROW 2 */}
           <div className="afGrid2">
             <div className="afField">
-              <div className="afLabel">
-                {t("admin.apptForm.fields.service")} *
-              </div>
+              <div className="afLabel">{t("admin.apptForm.fields.service")} *</div>
 
               {canUseServices ? (
                 <select
@@ -369,9 +388,7 @@ export default function AdminAppointmentFormPage({ mode }) {
             </div>
 
             <div className="afField">
-              <div className="afLabel">
-                {t("admin.apptForm.fields.room")} *
-              </div>
+              <div className="afLabel">{t("admin.apptForm.fields.room")} *</div>
 
               {canUseRooms ? (
                 <select
@@ -404,9 +421,7 @@ export default function AdminAppointmentFormPage({ mode }) {
           {/* ROW 3 */}
           <div className="afGrid2">
             <div className="afField">
-              <div className="afLabel">
-                {t("admin.apptForm.fields.start")} *
-              </div>
+              <div className="afLabel">{t("admin.apptForm.fields.start")} *</div>
               <input
                 className="afControl"
                 type="datetime-local"
@@ -417,9 +432,7 @@ export default function AdminAppointmentFormPage({ mode }) {
             </div>
 
             <div className="afField">
-              <div className="afLabel">
-                {t("admin.apptForm.fields.end")} *
-              </div>
+              <div className="afLabel">{t("admin.apptForm.fields.end")} *</div>
               <input
                 className="afControl"
                 type="datetime-local"

@@ -38,6 +38,9 @@ export default function DoctorVisitNoteDetailPage() {
 
   const [err, setErr] = useState(null);
 
+  // ✅ NEW: подтягиваем имя пациента если в note только id
+  const [patientName, setPatientName] = useState("");
+
   const load = async () => {
     setLoading(true);
     setErr(null);
@@ -61,6 +64,67 @@ export default function DoctorVisitNoteDetailPage() {
     load();
     // eslint-disable-next-line
   }, [id]);
+
+  // ✅ NEW: резолвим имя пациента, если пришёл только patient=id
+  useEffect(() => {
+    let alive = true;
+
+    async function resolvePatientName() {
+      if (!note) {
+        if (alive) setPatientName("");
+        return;
+      }
+
+      // 1) если бэк уже отдал имя/объект
+      const fromObj =
+        note?.patient?.full_name ||
+        note?.patient?.name ||
+        note?.patient_name ||
+        "";
+
+      if (fromObj) {
+        if (alive) setPatientName(fromObj);
+        return;
+      }
+
+      // 2) если patient это id — попробуем запросить пациента
+      const pid =
+        typeof note?.patient === "number" || typeof note?.patient === "string"
+          ? String(note.patient)
+          : note?.patient?.id != null
+          ? String(note.patient.id)
+          : "";
+
+      if (!pid) {
+        if (alive) setPatientName("");
+        return;
+      }
+
+      try {
+        // если у тебя есть doctorApi.getPatient — используем
+        if (typeof doctorApi.getPatient === "function") {
+          const p = await doctorApi.getPatient(pid);
+          const name =
+            p?.full_name ||
+            [p?.last_name, p?.first_name, p?.middle_name].filter(Boolean).join(" ") ||
+            p?.email ||
+            "";
+          if (alive) setPatientName(name || "");
+          return;
+        }
+      } catch (_) {
+        // тихо игнорим и падаем в fallback
+      }
+
+      // 3) fallback — оставим пусто, ниже покажем #id
+      if (alive) setPatientName("");
+    }
+
+    resolvePatientName();
+    return () => {
+      alive = false;
+    };
+  }, [note]);
 
   const save = async () => {
     setErr(null);
@@ -121,10 +185,19 @@ export default function DoctorVisitNoteDetailPage() {
   const appointmentLabel =
     note?.appointment?.id ?? note?.appointment_id ?? note?.appointment ?? "-";
 
+  // ✅ UPDATED: показываем имя пациента; если нет — fallback на #id
+  const rawPatientId =
+    typeof note?.patient === "number" || typeof note?.patient === "string"
+      ? String(note.patient)
+      : note?.patient?.id != null
+      ? String(note.patient.id)
+      : "";
+
   const patientLabel =
-    note?.patient?.full_name ??
-    note?.patient_name ??
-    (note?.patient ? `${t("doctor.visitNoteDetail.patientPrefix")} #${note.patient}` : "-");
+    patientName ||
+    note?.patient?.full_name ||
+    note?.patient_name ||
+    (rawPatientId ? `#${rawPatientId}` : "-");
 
   return (
     <div className="vndPage">
